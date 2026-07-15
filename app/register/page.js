@@ -29,11 +29,12 @@ export default function RegisterPage() {
     setSuccessMsg(null)
 
     try {
-      // 1. Sign up the user in Supabase Auth
+      // 1. Sign up the user in Supabase Auth with custom redirect back to the login page
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: 'https://www.project-find.online/login', // Redirects here after email confirmation
           data: {
             full_name: formData.name,
             phone_number: formData.phone,
