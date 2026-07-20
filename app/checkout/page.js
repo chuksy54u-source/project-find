@@ -1,9 +1,7 @@
-"use client"
-
+import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
-import { usePaystackPayment } from 'react-paystack'
 
 const getCleanSupabaseUrl = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -14,7 +12,7 @@ const supabaseUrl = getCleanSupabaseUrl()
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
@@ -22,7 +20,7 @@ export default function CheckoutPage() {
   const [profileData, setProfileData] = useState(null)
 
   const paymentAmountInNaira = 3000
-  const paymentAmountInKobo = paymentAmountInNaira * 100 // Paystack expects amounts in Kobo
+  const paymentAmountInKobo = paymentAmountInNaira * 100
 
   useEffect(() => {
     const checkSession = async () => {
@@ -50,70 +48,31 @@ export default function CheckoutPage() {
     checkSession()
   }, [router])
 
-  // Paystack Configuration
-  const paystackConfig = {
-    reference: `PF_${user?.id?.substring(0, 5)}_${new Date().getTime()}`,
-    email: user?.email || '',
-    amount: paymentAmountInKobo,
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
-    metadata: {
-      custom_fields: [
-        {
-          display_name: "Full Name",
-          variable_name: "full_name",
-          value: profileData?.full_name || user?.email,
-        }
-      ]
+  const handlePaystackPayment = () => {
+    // Dynamic require so react-paystack is NEVER evaluated on SSR
+    const { usePaystackPayment } = require('react-paystack')
+
+    const paystackConfig = {
+      reference: `PF_${user?.id?.substring(0, 5)}_${new Date().getTime()}`,
+      email: user?.email || '',
+      amount: paymentAmountInKobo,
+      publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+      metadata: {
+        custom_fields: [
+          {
+            display_name: "Full Name",
+            variable_name: "full_name",
+            value: profileData?.full_name || user?.email,
+          }
+        ]
+      }
     }
   }
 
-  const initializePayment = usePaystackPayment(paystackConfig)
-
-  // Success Callback
-  const handlePaystackSuccess = async (reference) => {
+  // Handle Paystack Popup
+  const triggerPayment = () => {
     setProcessing(true)
-
-    try {
-      // 1. Insert record into payments table marked as 'approved'
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          user_id: user.id,
-          sender_name: profileData?.full_name || user.email,
-          amount: paymentAmountInNaira,
-          receipt_url: `paystack_ref:${reference.reference}`,
-          status: 'approved'
-        })
-
-      if (paymentError) throw paymentError
-
-      // 2. Update profiles table payment_status column to 'paid'
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ payment_status: 'paid' })
-        .eq('id', user.id)
-
-      if (profileError) throw profileError
-
-      // 3. Redirect to Checkout Success Page
-      router.push('/checkout/success')
-    } catch (err) {
-      console.error("Database update error:", err)
-      alert("Payment was processed, but updating your account profile encountered an error. Please contact support.")
-    } finally {
-      setProcessing(false)
-    }
-  }
-
-  // Close Callback
-  const handlePaystackClose = () => {
-    setProcessing(false)
-  }
-
-  const handleStartPayment = (e) => {
-    e.preventDefault()
-    setProcessing(true)
-    initializePayment(handlePaystackSuccess, handlePaystackClose)
+    const { usePaystackPayment } = require('react-paystack')
   }
 
   if (loading) return null
@@ -135,7 +94,6 @@ export default function CheckoutPage() {
           Pay via card, bank transfer, or USSD using Paystack to activate your profile dashboard instantly.
         </p>
 
-        {/* Payment Summary Box */}
         <div className="bg-stone-950 p-6 rounded-2xl border border-amber-500/20 text-center space-y-2 mb-6">
           <span className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold">Total Amount</span>
           <p className="text-3xl font-black text-amber-500">₦3,000</p>
@@ -144,23 +102,15 @@ export default function CheckoutPage() {
           </span>
         </div>
 
-        {/* Paystack Pay Button */}
-        <button 
-          onClick={handleStartPayment}
-          disabled={processing}
-          className="w-full py-4 bg-amber-500 hover:bg-amber-400 disabled:bg-stone-800 disabled:text-stone-500 text-stone-950 font-black rounded-xl text-sm transition shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2"
-        >
-          {processing ? (
-            <span>Processing Payment...</span>
-          ) : (
-            <>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <span>Pay ₦3,000 with Paystack</span>
-            </>
-          )}
-        </button>
+        <PaystackButtonWrapper 
+          user={user}
+          profileData={profileData}
+          amountInKobo={paymentAmountInKobo}
+          amountInNaira={paymentAmountInNaira}
+          processing={processing}
+          setProcessing={setProcessing}
+          router={router}
+        />
 
         <button 
           onClick={() => router.push('/dashboard')}
@@ -172,3 +122,75 @@ export default function CheckoutPage() {
     </div>
   )
 }
+
+// Inner component that safely uses react-paystack on client
+function PaystackButtonWrapper({ user, profileData, amountInKobo, amountInNaira, processing, setProcessing, router }) {
+  const { usePaystackPayment } = require('react-paystack')
+
+  const paystackConfig = {
+    reference: `PF_${user?.id?.substring(0, 5)}_${new Date().getTime()}`,
+    email: user?.email || '',
+    amount: amountInKobo,
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+    metadata: {
+      custom_fields: [
+        {
+          display_name: "Full Name",
+          variable_name: "full_name",
+          value: profileData?.full_name || user?.email,
+        }
+      ]
+    }
+  }
+
+  const initializePayment = usePaystackPayment(paystackConfig)
+
+  const handleSuccess = async (reference) => {
+    setProcessing(true)
+    try {
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          user_id: user.id,
+          sender_name: profileData?.full_name || user.email,
+          amount: amountInNaira,
+          receipt_url: `paystack_ref:${reference.reference}`,
+          status: 'approved'
+        })
+
+      if (paymentError) throw paymentError
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ payment_status: 'paid' })
+        .eq('id', user.id)
+
+      if (profileError) throw profileError
+
+      router.push('/checkout/success')
+    } catch (err) {
+      console.error(err)
+      alert("Payment successful, but database update failed. Contact support.")
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  return (
+    <button 
+      onClick={() => {
+        setProcessing(true)
+        initializePayment(handleSuccess, () => setProcessing(false))
+      }}
+      disabled={processing}
+      className="w-full py-4 bg-amber-500 hover:bg-amber-400 disabled:bg-stone-800 disabled:text-stone-500 text-stone-950 font-black rounded-xl text-sm transition shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2"
+    >
+      {processing ? 'Processing Payment...' : 'Pay ₦3,000 with Paystack'}
+    </button>
+  )
+}
+
+// Export page with SSR disabled
+export default dynamic(() => Promise.resolve(CheckoutContent), {
+  ssr: false
+})
