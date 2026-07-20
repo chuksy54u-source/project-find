@@ -47,51 +47,51 @@ export default function CheckoutSuccessPage() {
 
       <div className="relative z-10 max-w-md w-full bg-stone-900/50 backdrop-blur-xl border border-stone-800 rounded-3xl p-8 text-center shadow-2xl space-y-6">
         
-        {/* Animated Check/Hourglass Icon */}
-        <div className="mx-auto h-16 w-16 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center relative">
-          <span className="absolute inset-0 rounded-full bg-amber-500/20 animate-ping opacity-75"></span>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-500 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        {/* Animated Green Checkmark Icon */}
+        <div className="mx-auto h-16 w-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center relative">
+          <span className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping opacity-75"></span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-emerald-500 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
 
         <div>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-3">
-            Proof Submitted Successfully
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3">
+            Payment Verified
           </span>
-          <h1 className="text-2xl font-black text-white tracking-tight">Payment Under Review</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">Payment Successful!</h1>
           <p className="text-stone-400 text-xs mt-2 leading-relaxed">
-            We have securely received your receipt screenshot. Our administration team is cross-checking the OPay transfer.
+            Your transaction has been securely processed via Paystack. Your access has been activated automatically.
           </p>
         </div>
 
         {/* Informative Status Details */}
         <div className="bg-stone-950 p-5 rounded-2xl border border-stone-850 text-left space-y-3">
           <div className="flex justify-between text-xs">
-            <span className="text-stone-500">Amount Sent:</span>
+            <span className="text-stone-500">Amount Paid:</span>
             <span className="font-bold text-white">₦3,000</span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-stone-500">Target Account:</span>
-            <span className="font-bold text-white">Igbozurike Kizito (OPay)</span>
+            <span className="text-stone-500">Payment Gateway:</span>
+            <span className="font-bold text-white">Paystack</span>
           </div>
           <div className="flex justify-between text-xs pt-3 border-t border-stone-900">
-            <span className="text-stone-500">Estimated Verification Time:</span>
-            <span className="font-bold text-amber-400">Within 24 Hours</span>
+            <span className="text-stone-500">Account Status:</span>
+            <span className="font-bold text-emerald-400 uppercase tracking-wide">Active / Paid</span>
           </div>
         </div>
 
-        {/* Progress Tracker */}
+        {/* Complete Progress Bar */}
         <div className="relative pt-2">
           <div className="flex mb-2 items-center justify-between">
             <div className="text-right">
-              <span className="text-[10px] font-bold inline-block text-amber-500 uppercase tracking-widest">
-                Step 2 of 3: Manual Verification
+              <span className="text-[10px] font-bold inline-block text-emerald-500 uppercase tracking-widest">
+                Step 3 of 3: Access Granted
               </span>
             </div>
           </div>
           <div className="overflow-hidden h-1.5 text-xs flex rounded bg-stone-950 border border-stone-900">
-            <div style={{ width: "66%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-amber-500 transition-all duration-500"></div>
+            <div style={{ width: "100%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500 transition-all duration-500"></div>
           </div>
         </div>
 
@@ -104,7 +104,7 @@ export default function CheckoutSuccessPage() {
           </button>
           
           <p className="text-[10px] text-stone-500 leading-normal">
-            Your premium features will automatically unlock once confirmation completes. If you have any questions, reach out with your transaction receipt.
+            A receipt has been sent to your registered email address. You can now access all features immediately.
           </p>
         </div>
       </div>
