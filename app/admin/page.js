@@ -34,8 +34,8 @@ export default function AdminDashboard() {
   const [adminUser, setAdminUser] = useState(null)
   
   // Dashboard Metrics
-  const [profiles, setProfiles] = useState([]) // Stores all non-admin profiles (for total count)
-  const [paidCandidates, setPaidCandidates] = useState([]) // Stores only verified paid candidates
+  const [profiles, setProfiles] = useState([]) // Stores all non-admin profiles
+  const [paidCandidates, setPaidCandidates] = useState([]) // Stores verified paid candidates
   const [pendingPayments, setPendingPayments] = useState([])
   const [interviews, setInterviews] = useState([])
 
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('payments') // 'payments' | 'interviews' | 'candidates'
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState(null)
   
-  // Fully Editable Dynamic Input States
+  // Dynamic Input States for Interviews
   const [meetingInputs, setMeetingInputs] = useState({}) 
   const [companyInputs, setCompanyInputs] = useState({})
   const [roleInputs, setRoleInputs] = useState({})
@@ -80,24 +80,24 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true)
     try {
-      // 1. Fetch pending payments with user details
+      // 1. Fetch pending payments with user profile details
       const { data: paymentsData, error: paymentsErr } = await supabase
         .from('payments')
-        .select(`*, profiles(email)`)
+        .select(`*, profiles(full_name, email, phone_number)`)
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
 
       if (paymentsErr) console.error("Error fetching payments:", paymentsErr)
 
-      // 2. Fetch interviews (Joins profiles to display dynamic Name and Email directly)
+      // 2. Fetch interviews (Joins complete profile metadata)
       const { data: interviewsData, error: interviewsErr } = await supabase
         .from('interviews')
-        .select(`*, profiles(full_name, email)`)
+        .select(`*, profiles(full_name, email, phone_number, payment_status, interests)`)
         .order('created_at', { ascending: false })
 
       if (interviewsErr) console.error("Error fetching interviews:", interviewsErr)
 
-      // 3. Fetch standard profiles cleanly
+      // 3. Fetch candidate profiles
       const { data: profilesData, error: profilesErr } = await supabase
         .from('profiles')
         .select('*')
@@ -106,11 +106,9 @@ export default function AdminDashboard() {
       if (profilesErr) {
         console.error("Error fetching profiles:", profilesErr)
       } else if (profilesData) {
-        // Safe JavaScript filter to exclude admin profiles
         const cleanCandidateProfiles = profilesData.filter(p => p.is_admin !== true)
         setProfiles(cleanCandidateProfiles)
 
-        // Filter standard candidate profiles to strictly show PAID and VERIFIED candidates
         const verifiedPaidOnly = cleanCandidateProfiles.filter(p => p.payment_status === 'paid')
         setPaidCandidates(verifiedPaidOnly)
       }
@@ -118,7 +116,7 @@ export default function AdminDashboard() {
       setPendingPayments(paymentsData || [])
       setInterviews(interviewsData || [])
 
-      // Map database fields to UI inputs to make them editable
+      // Initialize UI dynamic inputs for interviews
       if (interviewsData) {
         const initialCompanies = {}
         const initialRoles = {}
@@ -328,7 +326,8 @@ export default function AdminDashboard() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-stone-850 text-stone-500 font-bold uppercase tracking-wider">
-                        <th className="pb-3">User / Email</th>
+                        <th className="pb-3">Candidate</th>
+                        <th className="pb-3">Email & Contact</th>
                         <th className="pb-3">Sender Name</th>
                         <th className="pb-3">Amount</th>
                         <th className="pb-3">Submitted</th>
@@ -339,9 +338,15 @@ export default function AdminDashboard() {
                     <tbody className="divide-y divide-stone-900/60 font-medium text-stone-300">
                       {pendingPayments.map((p) => (
                         <tr key={p.id} className="hover:bg-stone-950/20">
-                          <td className="py-4 text-stone-400">{p.profiles?.email || 'Unknown'}</td>
+                          <td className="py-4 font-bold text-white">
+                            {p.profiles?.full_name || 'N/A'}
+                          </td>
+                          <td className="py-4 text-stone-400">
+                            <div>{p.profiles?.email || 'Unknown'}</div>
+                            <div className="text-[10px] text-stone-500">{p.profiles?.phone_number || 'No phone'}</div>
+                          </td>
                           <td className="py-4 font-bold text-white">{p.sender_name}</td>
-                          <td className="py-4">₦{p.amount.toLocaleString()}</td>
+                          <td className="py-4 font-bold text-amber-500">₦{p.amount ? p.amount.toLocaleString() : '0'}</td>
                           <td className="py-4 text-[10px] text-stone-500">
                             {new Date(p.created_at).toLocaleString()}
                           </td>
@@ -350,7 +355,7 @@ export default function AdminDashboard() {
                               onClick={() => setSelectedReceiptUrl(p.receipt_url)}
                               className="px-3 py-1.5 bg-stone-900 hover:bg-stone-850 text-amber-500 border border-stone-850 rounded-lg text-[10px] font-black"
                             >
-                              👀 View Receipt image
+                              👀 View Receipt
                             </button>
                           </td>
                           <td className="py-4 text-right space-x-2">
@@ -390,10 +395,10 @@ export default function AdminDashboard() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-stone-850 text-stone-500 font-bold uppercase tracking-wider">
-                        <th className="pb-3">Candidate</th>
-                        <th className="pb-3">Email</th>
-                        <th className="pb-3">Current Status</th>
-                        <th className="pb-3">Candidate Resume</th>
+                        <th className="pb-3">Candidate Info</th>
+                        <th className="pb-3">Contact</th>
+                        <th className="pb-3">Status</th>
+                        <th className="pb-3">Resume</th>
                         <th className="pb-3">Scheduling Data Inputs</th>
                         <th className="pb-3 text-right">Action</th>
                       </tr>
@@ -401,8 +406,22 @@ export default function AdminDashboard() {
                     <tbody className="divide-y divide-stone-900/60 font-medium text-stone-300">
                       {interviews.map((i) => (
                         <tr key={i.id} className="hover:bg-stone-950/20 align-top">
-                          <td className="py-4 font-bold text-white">{i.profiles?.full_name || 'N/A'}</td>
-                          <td className="py-4 text-stone-400">{i.profiles?.email || 'N/A'}</td>
+                          <td className="py-4">
+                            <div className="font-bold text-white">{i.profiles?.full_name || 'N/A'}</div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {i.profiles?.interests && i.profiles.interests.length > 0 ? (
+                                i.profiles.interests.map((int, idx) => (
+                                  <span key={idx} className="bg-stone-950 border border-stone-850 text-stone-400 px-1.5 py-0.5 rounded text-[8px]">
+                                    {int}
+                                  </span>
+                                ))
+                              ) : null}
+                            </div>
+                          </td>
+                          <td className="py-4 text-stone-400">
+                            <div>{i.profiles?.email || 'N/A'}</div>
+                            <div className="text-[10px] text-stone-500">{i.profiles?.phone_number || 'N/A'}</div>
+                          </td>
                           <td className="py-4">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
                               i.status === 'scheduled' 
@@ -423,7 +442,7 @@ export default function AdminDashboard() {
                                 📥 Download CV
                               </a>
                             ) : (
-                              <span className="text-stone-600 italic text-[10px]">No CV uploaded yet</span>
+                              <span className="text-stone-600 italic text-[10px]">No CV uploaded</span>
                             )}
                           </td>
                           

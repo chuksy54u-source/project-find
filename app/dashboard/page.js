@@ -13,6 +13,12 @@ const supabaseUrl = getCleanSupabaseUrl()
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Pre-defined options for hiring fields
+const WORK_MODES = ['Remote', 'Hybrid', 'On-site']
+const EMPLOYMENT_STATUSES = ['Open to Work', 'Employed', 'Freelance', 'Unemployed']
+const NOTICE_PERIODS = ['Immediate', '1 Week', '2 Weeks', '1 Month', '2+ Months']
+const CURRENCIES = ['NGN', 'USD', 'EUR', 'GBP']
+
 export default function DashboardPage() {
   const router = useRouter()
   const fileInputRef = useRef(null)
@@ -28,11 +34,31 @@ export default function DashboardPage() {
   
   const [activeTab, setActiveTab] = useState('overview') 
 
+  // --- POPUP & EDIT DETAILS FORM STATE ---
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false)
+  const [savingDetails, setSavingDetails] = useState(false)
+  const [skillInput, setSkillInput] = useState('')
+  const [formData, setFormData] = useState({
+    target_role: '',
+    years_of_experience: 0,
+    employment_status: 'Open to Work',
+    notice_period: 'Immediate',
+    preferred_work_mode: 'Remote',
+    expected_salary: '',
+    salary_currency: 'NGN',
+    location_city: '',
+    location_country: 'Nigeria',
+    willing_to_relocate: false,
+    linkedin_url: '',
+    portfolio_url: '',
+    bio_summary: '',
+    primary_skills: []
+  })
+
   // --- CUSTOMER SERVICE BUBBLE STATE ---
   const [isCrmOpen, setIsCrmOpen] = useState(false)
   const [crmMessage, setCrmMessage] = useState('')
   const [crmSending, setCrmSending] = useState(false)
-  const [crmSuccess, setCrmSuccess] = useState(false)
 
   // --- WHATSAPP CHAT HISTORY STATE ---
   const [crmHistory, setCrmHistory] = useState([])
@@ -63,7 +89,31 @@ export default function DashboardPage() {
           console.error("Error retrieving profile row:", profileError)
         } else {
           setProfile(profileData)
-          
+
+          // Load profile details into formData
+          const existingData = {
+            target_role: profileData.target_role || '',
+            years_of_experience: profileData.years_of_experience || 0,
+            employment_status: profileData.employment_status || 'Open to Work',
+            notice_period: profileData.notice_period || 'Immediate',
+            preferred_work_mode: profileData.preferred_work_mode || 'Remote',
+            expected_salary: profileData.expected_salary || '',
+            salary_currency: profileData.salary_currency || 'NGN',
+            location_city: profileData.location_city || '',
+            location_country: profileData.location_country || 'Nigeria',
+            willing_to_relocate: profileData.willing_to_relocate || false,
+            linkedin_url: profileData.linkedin_url || '',
+            portfolio_url: profileData.portfolio_url || '',
+            bio_summary: profileData.bio_summary || '',
+            primary_skills: profileData.primary_skills || []
+          }
+          setFormData(existingData)
+
+          // Check if key hiring info is missing. If so, trigger the onboarding modal
+          if (!profileData.target_role || !profileData.expected_salary) {
+            setShowOnboardingModal(true)
+          }
+
           const { data: cvData } = await supabase
             .from('cvs')
             .select('*')
@@ -99,6 +149,66 @@ export default function DashboardPage() {
     fetchUserData()
   }, [router])
 
+  // --- SAVE PROFILE ADDITIONAL DETAILS ---
+  const handleSaveProfileDetails = async (e) => {
+    e.preventDefault()
+    if (!user) return
+
+    setSavingDetails(true)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          target_role: formData.target_role,
+          years_of_experience: Number(formData.years_of_experience),
+          employment_status: formData.employment_status,
+          notice_period: formData.notice_period,
+          preferred_work_mode: formData.preferred_work_mode,
+          expected_salary: formData.expected_salary,
+          salary_currency: formData.salary_currency,
+          location_city: formData.location_city,
+          location_country: formData.location_country,
+          willing_to_relocate: formData.willing_to_relocate,
+          linkedin_url: formData.linkedin_url,
+          portfolio_url: formData.portfolio_url,
+          bio_summary: formData.bio_summary,
+          primary_skills: formData.primary_skills,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      setProfile((prev) => ({ ...prev, ...formData }))
+      setShowOnboardingModal(false)
+      alert("Profile details updated successfully!")
+    } catch (err) {
+      console.error("Error saving profile details:", err)
+      alert("Failed to save details. Please try again.")
+    } finally {
+      setSavingDetails(false)
+    }
+  }
+
+  // --- SKILLS TAG MANAGEMENT ---
+  const handleAddSkill = (e) => {
+    e.preventDefault()
+    if (skillInput.trim() && !formData.primary_skills.includes(skillInput.trim())) {
+      setFormData({
+        ...formData,
+        primary_skills: [...formData.primary_skills, skillInput.trim()]
+      })
+      setSkillInput('')
+    }
+  }
+
+  const handleRemoveSkill = (skillToRemove) => {
+    setFormData({
+      ...formData,
+      primary_skills: formData.primary_skills.filter(s => s !== skillToRemove)
+    })
+  }
+
   // --- FETCH CRM CHAT HISTORY ---
   const fetchCrmHistory = async () => {
     if (!user) return
@@ -108,7 +218,7 @@ export default function DashboardPage() {
         .from('crm')
         .select('*')
         .eq('profile_id', user.id)
-        .order('created_at', { ascending: true }) // Oldest messages first to build the chat top-to-bottom
+        .order('created_at', { ascending: true })
 
       if (error) throw error
       if (data) setCrmHistory(data)
@@ -119,14 +229,12 @@ export default function DashboardPage() {
     }
   }
 
-  // Load chat history whenever the bubble is opened
   useEffect(() => {
     if (isCrmOpen) {
       fetchCrmHistory()
     }
   }, [isCrmOpen, user])
 
-  // Auto-scroll to the newest message at the bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
@@ -162,7 +270,6 @@ export default function DashboardPage() {
         })
 
       if (uploadError) {
-        console.error("Storage Upload Error:", uploadError)
         throw new Error(`Storage upload failed: ${uploadError.message}`)
       }
 
@@ -170,15 +277,10 @@ export default function DashboardPage() {
         .from('resumes')
         .getPublicUrl(bucketPath)
 
-      const { error: interviewUpdateError } = await supabase
+      await supabase
         .from('interviews')
         .update({ cv_url: publicUrl })
         .eq('user_id', user.id)
-
-      if (interviewUpdateError) {
-        console.error("Interviews Table Update Error:", interviewUpdateError)
-        throw new Error(`Interviews update failed: ${interviewUpdateError.message}`)
-      }
 
       const userEmail = profile?.email || user.email || 'no-email@provided.com'
       const userName = profile?.full_name || user?.user_metadata?.full_name || 'Valued User'
@@ -192,14 +294,11 @@ export default function DashboardPage() {
         cv_url: publicUrl
       }
 
-      const { data: upsertData, error: cvUpsertError } = await supabase
+      const { error: cvUpsertError } = await supabase
         .from('cvs')
         .upsert(cvMetadata, { onConflict: 'user_id' })
-        .select()
-        .single()
 
       if (cvUpsertError) {
-        console.error("Cvs Table Upsert Error:", cvUpsertError)
         throw new Error(`CV metadata save failed: ${cvUpsertError.message}`)
       }
 
@@ -215,14 +314,13 @@ export default function DashboardPage() {
     }
   }
 
-  // --- SUBMIT CRM MESSAGE HANDLER ---
   const handleCrmSubmit = async (e) => {
     e.preventDefault()
     if (!crmMessage.trim() || !user) return
 
     setCrmSending(true)
     const currentMessageText = crmMessage.trim()
-    setCrmMessage('') // Clear input field instantly for better UX
+    setCrmMessage('')
 
     try {
       const userEmail = profile?.email || user.email || 'no-email@provided.com'
@@ -236,14 +334,13 @@ export default function DashboardPage() {
           email: userEmail,
           message: currentMessageText,
           status: 'pending',
-          message_type: 'cm' // Sets message type specifically to 'cm' for registered users
+          message_type: 'cm'
         })
         .select()
         .single()
 
       if (error) throw error
 
-      // Push the newly sent message into the chat UI immediately
       if (newRow) {
         setCrmHistory((prev) => [...prev, newRow])
       }
@@ -251,7 +348,7 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Error submitting CRM message:", err)
       alert("Could not send your message. Please try again.")
-      setCrmMessage(currentMessageText) // Put text back if it fails
+      setCrmMessage(currentMessageText)
     } finally {
       setCrmSending(false)
     }
@@ -280,6 +377,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 font-sans selection:bg-amber-600 selection:text-white relative overflow-x-hidden flex flex-col justify-between">
       
+      {/* BACKGROUND GRAPHICS */}
       <div className="fixed inset-0 w-full h-full z-0 pointer-events-none">
         <img 
           src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1800&auto=format&fit=crop" 
@@ -316,6 +414,7 @@ export default function DashboardPage() {
 
       <main className="relative flex-grow max-w-7xl mx-auto w-full px-6 py-10 z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
+        {/* LEFT SIDEBAR MENU */}
         <section className="lg:col-span-4 space-y-6">
           <div className="bg-stone-950/85 backdrop-blur-md border border-stone-850/70 rounded-3xl p-6 shadow-xl relative overflow-hidden">
             <div className="flex items-center gap-4">
@@ -325,6 +424,11 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-base font-bold text-white leading-tight">{fullName}</h2>
                 <p className="text-xs text-stone-400 font-medium">{emailAddress}</p>
+                {formData.target_role && (
+                  <span className="inline-block mt-1 text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-semibold">
+                    {formData.target_role}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -406,6 +510,7 @@ export default function DashboardPage() {
           )}
         </section>
 
+        {/* MAIN DISPLAY CONTENT AREA */}
         <section className="lg:col-span-8 space-y-6">
           
           {/* TAB 1: MY STATUS */}
@@ -672,16 +777,26 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* TAB 3: MY DETAILS */}
+          {/* TAB 3: MY DETAILS (EXPANDED FORM) */}
           {activeTab === 'settings' && (
             <div className="bg-stone-950/85 backdrop-blur-md border border-stone-850/60 rounded-3xl p-6 shadow-xl space-y-6">
-              <div>
-                <h3 className="text-lg font-bold text-white mb-1">Your Saved Information</h3>
-                <p className="text-stone-400 text-xs">This is the profile data we share with hiring managers to find your perfect job match.</p>
+              <div className="flex justify-between items-center border-b border-stone-900 pb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1">Your Saved Information</h3>
+                  <p className="text-stone-400 text-xs">Update your career preferences to get accurately matched with recruiters.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowOnboardingModal(true)}
+                  className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 text-xs font-bold rounded-xl transition"
+                >
+                  Edit Profile Popup
+                </button>
               </div>
 
-              <div className="space-y-4 pt-2 text-xs">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={handleSaveProfileDetails} className="space-y-6 text-xs">
+                {/* Basic Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-2">My Full Name</label>
                     <input 
@@ -702,18 +817,206 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-stone-900/80">
-                  <span className="block text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-2">My Selected Industries</span>
+                {/* Target Role & Experience */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Target Job Title / Role</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Full-Stack Developer"
+                      value={formData.target_role}
+                      onChange={(e) => setFormData({ ...formData, target_role: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Years of Experience</label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={formData.years_of_experience}
+                      onChange={(e) => setFormData({ ...formData, years_of_experience: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Employment Status & Work Mode */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Employment Status</label>
+                    <select
+                      value={formData.employment_status}
+                      onChange={(e) => setFormData({ ...formData, employment_status: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    >
+                      {EMPLOYMENT_STATUSES.map((status) => (
+                        <option key={status} value={status}>{status}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Preferred Work Mode</label>
+                    <select
+                      value={formData.preferred_work_mode}
+                      onChange={(e) => setFormData({ ...formData, preferred_work_mode: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    >
+                      {WORK_MODES.map((mode) => (
+                        <option key={mode} value={mode}>{mode}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Notice Period</label>
+                    <select
+                      value={formData.notice_period}
+                      onChange={(e) => setFormData({ ...formData, notice_period: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    >
+                      {NOTICE_PERIODS.map((period) => (
+                        <option key={period} value={period}>{period}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Expected Salary & Currency */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Expected Compensation</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 500,000 / month"
+                      value={formData.expected_salary}
+                      onChange={(e) => setFormData({ ...formData, expected_salary: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Currency</label>
+                    <select
+                      value={formData.salary_currency}
+                      onChange={(e) => setFormData({ ...formData, salary_currency: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    >
+                      {CURRENCIES.map((curr) => (
+                        <option key={curr} value={curr}>{curr}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Location & Relocation */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">City</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Lagos"
+                      value={formData.location_city}
+                      onChange={(e) => setFormData({ ...formData, location_city: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Country</label>
+                    <input 
+                      type="text" 
+                      value={formData.location_country}
+                      onChange={(e) => setFormData({ ...formData, location_country: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 py-2">
+                  <input 
+                    type="checkbox"
+                    id="relocate_check"
+                    checked={formData.willing_to_relocate}
+                    onChange={(e) => setFormData({ ...formData, willing_to_relocate: e.target.checked })}
+                    className="h-4 w-4 rounded border-stone-800 bg-stone-900 text-amber-500 focus:ring-amber-500"
+                  />
+                  <label htmlFor="relocate_check" className="text-xs font-bold text-stone-300 cursor-pointer">
+                    I am open and willing to relocate for the right role.
+                  </label>
+                </div>
+
+                {/* Social Links */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">LinkedIn URL</label>
+                    <input 
+                      type="url" 
+                      placeholder="https://linkedin.com/in/username"
+                      value={formData.linkedin_url}
+                      onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Portfolio / GitHub Link</label>
+                    <input 
+                      type="url" 
+                      placeholder="https://myportfolio.com"
+                      value={formData.portfolio_url}
+                      onChange={(e) => setFormData({ ...formData, portfolio_url: e.target.value })}
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Primary Skills Tags */}
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Primary Technical / Core Skills</label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input 
+                      type="text" 
+                      placeholder="e.g. React, Python, Customer Care"
+                      value={skillInput}
+                      onChange={(e) => setSkillInput(e.target.value)}
+                      className="flex-grow bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-2.5 text-white focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSkill}
+                      className="px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-white font-bold rounded-xl"
+                    >
+                      Add Skill
+                    </button>
+                  </div>
                   <div className="flex flex-wrap gap-2">
-                    {activeInterests.map((interest, index) => (
-                      <span key={index} className="bg-stone-900 border border-stone-800 text-stone-300 px-3 py-1.5 rounded-xl font-bold text-[10px]">
-                        {interest}
+                    {formData.primary_skills.map((skill, i) => (
+                      <span key={i} className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-3 py-1 rounded-xl text-[11px] font-bold flex items-center gap-2">
+                        {skill}
+                        <button type="button" onClick={() => handleRemoveSkill(skill)} className="hover:text-red-400">×</button>
                       </span>
                     ))}
                   </div>
-                  <span className="block text-[10px] text-stone-500 mt-2">We only match you with jobs in these chosen fields.</span>
                 </div>
-              </div>
+
+                {/* Bio Summary */}
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider text-amber-400 font-bold mb-2">Elevator Pitch / Bio Summary</label>
+                  <textarea 
+                    rows={3}
+                    placeholder="Briefly describe your core strengths and what kind of team you excel in..."
+                    value={formData.bio_summary}
+                    onChange={(e) => setFormData({ ...formData, bio_summary: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                  />
+                </div>
+
+                {/* Save Button */}
+                <button
+                  type="submit"
+                  disabled={savingDetails}
+                  className="w-full py-4 bg-amber-500 hover:bg-amber-400 disabled:bg-stone-800 text-stone-950 font-black rounded-xl transition text-xs shadow-lg"
+                >
+                  {savingDetails ? 'Saving Changes...' : 'Save Profile Details'}
+                </button>
+              </form>
             </div>
           )}
 
@@ -721,19 +1024,157 @@ export default function DashboardPage() {
 
       </main>
 
+      {/* ONBOARDING MODAL POPUP */}
+      {showOnboardingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-stone-950 border border-amber-500/30 w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            
+            <button 
+              onClick={() => setShowOnboardingModal(false)}
+              className="absolute top-6 right-6 text-stone-400 hover:text-white text-lg font-bold"
+            >
+              ✕
+            </button>
+
+            <div className="mb-6">
+              <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                Action Required
+              </span>
+              <h2 className="text-xl font-black text-white mt-2">Complete Your Recruiter Profile</h2>
+              <p className="text-stone-400 text-xs mt-1">
+                Help us match you with hiring managers by providing a few additional candidate details.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveProfileDetails} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] uppercase text-amber-400 font-bold mb-1">Target Job Title / Role *</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="e.g. Frontend Engineer, Accountant"
+                    value={formData.target_role}
+                    onChange={(e) => setFormData({ ...formData, target_role: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-amber-400 font-bold mb-1">Years of Experience *</label>
+                  <input 
+                    type="number" 
+                    required
+                    min="0"
+                    value={formData.years_of_experience}
+                    onChange={(e) => setFormData({ ...formData, years_of_experience: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-[10px] uppercase text-amber-400 font-bold mb-1">Employment Status</label>
+                  <select
+                    value={formData.employment_status}
+                    onChange={(e) => setFormData({ ...formData, employment_status: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                  >
+                    {EMPLOYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-amber-400 font-bold mb-1">Work Mode</label>
+                  <select
+                    value={formData.preferred_work_mode}
+                    onChange={(e) => setFormData({ ...formData, preferred_work_mode: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                  >
+                    {WORK_MODES.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-amber-400 font-bold mb-1">Notice Period</label>
+                  <select
+                    value={formData.notice_period}
+                    onChange={(e) => setFormData({ ...formData, notice_period: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                  >
+                    {NOTICE_PERIODS.map(np => <option key={np} value={np}>{np}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] uppercase text-amber-400 font-bold mb-1">Expected Salary *</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="e.g. 400,000"
+                    value={formData.expected_salary}
+                    onChange={(e) => setFormData({ ...formData, expected_salary: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-amber-400 font-bold mb-1">Currency</label>
+                  <select
+                    value={formData.salary_currency}
+                    onChange={(e) => setFormData({ ...formData, salary_currency: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                  >
+                    {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] uppercase text-amber-400 font-bold mb-1">LinkedIn Profile URL</label>
+                  <input 
+                    type="url" 
+                    placeholder="https://linkedin.com/in/..."
+                    value={formData.linkedin_url}
+                    onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-amber-400 font-bold mb-1">Portfolio / Github URL</label>
+                  <input 
+                    type="url" 
+                    placeholder="https://..."
+                    value={formData.portfolio_url}
+                    onChange={(e) => setFormData({ ...formData, portfolio_url: e.target.value })}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={savingDetails}
+                  className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black rounded-xl text-xs transition shadow-lg"
+                >
+                  {savingDetails ? 'Saving...' : 'Save & Continue to Dashboard'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <footer className="relative border-t border-stone-900/60 py-8 text-center text-xs text-stone-300 font-medium z-10 backdrop-blur-sm">
         <p>© 2026 Project Find. All rights reserved. Simplifying careers, one applicant at a time.</p>
       </footer>
 
-      {/* ======================================================== */}
-      {/* WHATSAPP-STYLE CHAT BUBBLE WIDGET                        */}
-      {/* ======================================================== */}
+      {/* WHATSAPP-STYLE CHAT BUBBLE WIDGET */}
       <div className="fixed bottom-6 right-6 z-50 font-sans text-stone-100 flex items-center space-x-3">
         {isCrmOpen ? (
-          /* Expanded Chat Interface */
           <div className="w-80 md:w-96 h-[500px] flex flex-col bg-stone-950/95 border border-amber-500/30 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-200">
             
-            {/* Chat Header */}
             <div className="bg-stone-900/90 border-b border-stone-800/60 p-4 flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center shadow-lg border border-stone-900">
@@ -758,7 +1199,6 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {/* Chat Messages Area */}
             <div className="flex-grow overflow-y-auto p-4 space-y-4 bg-stone-950/40 relative custom-scrollbar">
               {crmLoadingHistory ? (
                 <div className="flex justify-center items-center h-full">
@@ -771,7 +1211,6 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 crmHistory.map((msg, index) => {
-                  // If the message came from this user profile, show it on the right side
                   const isUser = msg.profile_id === user.id;
                   
                   return (
@@ -786,7 +1225,6 @@ export default function DashboardPage() {
                         {msg.message}
                       </div>
                       
-                      {/* Sub-label for status and timestamp */}
                       <div className={`flex items-center gap-2 mt-1 text-[9px] text-stone-500 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
                         <span>
                           {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
@@ -798,7 +1236,6 @@ export default function DashboardPage() {
                         )}
                       </div>
 
-                      {/* Display the reply message directly underneath if the support desk replied */}
                       {msg.reply_status === 'replied' && msg.reply_message && (
                         <div className="mt-2 w-full flex flex-col items-start">
                            <div className="px-4 py-2.5 max-w-[85%] text-xs shadow-sm leading-relaxed bg-stone-800 text-stone-200 border border-stone-700 rounded-2xl rounded-tl-sm">
@@ -811,11 +1248,9 @@ export default function DashboardPage() {
                   )
                 })
               )}
-              {/* Invisible anchor to ensure scroll snaps to the bottom */}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Input Box */}
             <div className="p-3 bg-stone-900 border-t border-stone-800/80 shrink-0">
               <form onSubmit={handleCrmSubmit} className="flex items-center gap-2">
                 <input
@@ -844,7 +1279,6 @@ export default function DashboardPage() {
 
           </div>
         ) : (
-          /* Floating Sticky Trigger Bubble Configuration */
           <div className="flex items-center gap-3 relative">
             <div className="hidden md:inline-flex bg-amber-500 text-stone-950 font-black tracking-tight text-[11px] px-3.5 py-2 rounded-xl shadow-lg border border-amber-400 animate-bounce duration-1000">
               Need Help? Ask Here!
