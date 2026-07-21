@@ -7,6 +7,7 @@ export default function LegalPortalPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('privacy')
   const [isMobileTabsOpen, setIsMobileTabsOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const legalSections = [
     { id: 'privacy', label: 'Privacy Policy' },
@@ -233,45 +234,102 @@ export default function LegalPortalPage() {
       </div>
 
       {/* NAVIGATION HEADER */}
-      <header className="relative max-w-7xl mx-auto px-6 py-6 flex flex-col lg:flex-row items-center justify-between gap-6 border-b border-stone-900/60 z-10 backdrop-blur-md">
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => router.push('/')}>
-          <div className="h-11 w-11 bg-black rounded-full flex items-center justify-center border border-stone-800 shadow-lg overflow-hidden shrink-0 relative">
-            <span className="text-[11px] font-bold text-white tracking-tighter lowercase font-sans absolute">project</span>
+      <header className="relative max-w-7xl mx-auto px-6 py-6 border-b border-stone-900/60 z-10 backdrop-blur-md">
+        <div className="flex items-center justify-between">
+          
+          {/* Logo */}
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => router.push('/')}>
+            <div className="h-11 w-11 bg-black rounded-full flex items-center justify-center border border-stone-800 shadow-lg overflow-hidden shrink-0 relative">
+              <span className="text-[11px] font-bold text-white tracking-tighter lowercase font-sans absolute">project</span>
+            </div>
+            <span className="text-xl font-extrabold bg-gradient-to-r from-white via-stone-200 to-stone-400 bg-clip-text text-transparent tracking-tight">
+              Project Find
+            </span>
           </div>
-          <span className="text-xl font-extrabold bg-gradient-to-r from-white via-stone-200 to-stone-400 bg-clip-text text-transparent tracking-tight">
-            Project Find
-          </span>
+
+          {/* DESKTOP NAV LINKS */}
+          <nav className="hidden lg:flex items-center gap-x-6 text-sm font-bold text-stone-300">
+            <button onClick={() => router.push('/')} className="hover:text-amber-400 transition-colors duration-200">
+              Home
+            </button>
+            <button onClick={() => router.push('/#how-it-works')} className="hover:text-amber-400 transition-colors duration-200">
+              How It Works
+            </button>
+            <button onClick={() => router.push('/faq')} className="hover:text-amber-400 transition-colors duration-200">
+              FAQ
+            </button>
+            <button onClick={() => router.push('/about')} className="hover:text-amber-400 transition-colors duration-200">
+              About Us
+            </button>
+            <button onClick={() => router.push('/privacy')} className="text-amber-400 transition-colors duration-200 border-b-2 border-amber-400/30 pb-0.5">
+              Privacy Policy
+            </button>
+            <button onClick={() => router.push('/contact')} className="hover:text-amber-400 transition-colors duration-200">
+              Contact Us
+            </button>
+          </nav>
+
+          {/* DESKTOP AUTH BUTTONS */}
+          <div className="hidden lg:flex items-center gap-3">
+            <button onClick={() => router.push('/login')} className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md">
+              Log In
+            </button>
+            <button onClick={() => router.push('/register')} className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md">
+              Sign Up
+            </button>
+          </div>
+
+          {/* MOBILE HAMBURGER TOGGLE BUTTON FOR PAGE NAV */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-amber-400 focus:outline-none"
+          >
+            {isMobileMenuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+
         </div>
 
-        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-bold text-stone-300">
-          <button onClick={() => router.push('/')} className="hover:text-amber-400 transition-colors duration-200">
-            Home
-          </button>
-          <button onClick={() => router.push('/#how-it-works')} className="hover:text-amber-400 transition-colors duration-200">
-            How It Works
-          </button>
-          <button onClick={() => router.push('/faq')} className="hover:text-amber-400 transition-colors duration-200">
-            FAQ
-          </button>
-          <button onClick={() => router.push('/about')} className="hover:text-amber-400 transition-colors duration-200">
-            About Us
-          </button>
-          <button onClick={() => router.push('/privacy')} className="text-amber-400 transition-colors duration-200 border-b-2 border-amber-400/30 pb-0.5">
-            Privacy Policy
-          </button>
-          <button onClick={() => router.push('/contact')} className="hover:text-amber-400 transition-colors duration-200">
-            Contact Us
-          </button>
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push('/login')} className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md">
-            Log In
-          </button>
-          <button onClick={() => router.push('/register')} className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md">
-            Sign Up
-          </button>
-        </div>
+        {/* MOBILE DROPDOWN MENU FOR PAGE NAV */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden mt-4 pt-4 border-t border-stone-900 space-y-4">
+            <nav className="flex flex-col space-y-2 text-sm font-bold text-stone-300">
+              <button onClick={() => { router.push('/'); setIsMobileMenuOpen(false); }} className="text-left py-2 px-3 rounded-lg hover:bg-stone-900 transition-colors">
+                Home
+              </button>
+              <button onClick={() => { router.push('/#how-it-works'); setIsMobileMenuOpen(false); }} className="text-left py-2 px-3 rounded-lg hover:bg-stone-900 transition-colors">
+                How It Works
+              </button>
+              <button onClick={() => { router.push('/faq'); setIsMobileMenuOpen(false); }} className="text-left py-2 px-3 rounded-lg hover:bg-stone-900 transition-colors">
+                FAQ
+              </button>
+              <button onClick={() => { router.push('/about'); setIsMobileMenuOpen(false); }} className="text-left py-2 px-3 rounded-lg hover:bg-stone-900 transition-colors">
+                About Us
+              </button>
+              <button onClick={() => { router.push('/privacy'); setIsMobileMenuOpen(false); }} className="text-left py-2 px-3 rounded-lg text-amber-400 bg-amber-500/10 transition-colors">
+                Privacy Policy
+              </button>
+              <button onClick={() => { router.push('/contact'); setIsMobileMenuOpen(false); }} className="text-left py-2 px-3 rounded-lg hover:bg-stone-900 transition-colors">
+                Contact Us
+              </button>
+            </nav>
+            <div className="flex items-center gap-3 pt-2">
+              <button onClick={() => { router.push('/login'); setIsMobileMenuOpen(false); }} className="flex-1 py-2.5 bg-stone-900 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 transition">
+                Log In
+              </button>
+              <button onClick={() => { router.push('/register'); setIsMobileMenuOpen(false); }} className="flex-1 py-2.5 bg-stone-900 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 transition">
+                Sign Up
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* LEGAL PORTAL SECTION */}
@@ -280,7 +338,7 @@ export default function LegalPortalPage() {
         {/* LEFT COLUMN: DIRECTORY SIDEBAR */}
         <aside className="lg:col-span-3 lg:sticky lg:top-24">
           
-          {/* MOBILE ONLY: Hamburger Bar & Collapsible Menu */}
+          {/* MOBILE ONLY: Hamburger Bar & Collapsible Menu for Legal Tabs */}
           <div className="lg:hidden mb-4 bg-stone-900/80 border border-stone-800/80 rounded-2xl p-3 shadow-lg">
             <button
               onClick={() => setIsMobileTabsOpen(!isMobileTabsOpen)}
@@ -295,7 +353,6 @@ export default function LegalPortalPage() {
                 </span>
               </div>
 
-              {/* Hamburger / Close Icon */}
               <div className="p-1.5 rounded-lg bg-stone-800 text-amber-400">
                 {isMobileTabsOpen ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -309,7 +366,6 @@ export default function LegalPortalPage() {
               </div>
             </button>
 
-            {/* Mobile Dropdown Options */}
             {isMobileTabsOpen && (
               <div className="mt-3 pt-3 border-t border-stone-800 space-y-1">
                 {legalSections.map((sect) => (
@@ -362,7 +418,6 @@ export default function LegalPortalPage() {
           
           {renderContent()}
 
-          {/* Compliance Bottom Badge Layout */}
           <div className="border-t border-stone-900/60 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-stone-400">
               For additional assistance, write directly to <a href="mailto:kossiigboanugo@gmail.com" className="text-amber-400 hover:underline">kossiigboanugo@gmail.com</a>.
