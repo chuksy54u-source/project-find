@@ -420,7 +420,7 @@ export default function LegalPortalPage() {
 
           <div className="border-t border-stone-900/60 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-stone-400">
-              For additional assistance, write directly to <a href="mailto:kossiigboanugo@gmail.com" className="text-amber-400 hover:underline">kossiigboanugo@gmail.com</a>.
+              For additional assistance, write directly to <a href="mailto:corporate@project-find.online" className="text-amber-400 hover:underline">corporate@project-find.online</a>.
             </p>
             <div className="flex items-center space-x-3 bg-stone-950 border border-stone-900 px-4 py-2 rounded-xl">
               <div className="h-5 w-5 bg-amber-500 rounded-full flex items-center justify-center text-stone-950 font-bold text-[10px]">

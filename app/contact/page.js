@@ -286,10 +286,10 @@ export default function ContactPage() {
                 <h3 className="text-base font-bold text-stone-400 uppercase tracking-wider">Official Support Email</h3>
               </div>
               <a 
-                href="mailto:kossiigboanugo@gmail.com" 
+                href="mailto:corporate@project-find.online" 
                 className="text-xl font-black text-stone-100 hover:text-amber-400 transition-colors tracking-tight block break-all underline decoration-amber-500/50"
               >
-                kossiigboanugo@gmail.com
+                corporate@project-find.online
               </a>
               <p className="text-stone-400 text-xs font-semibold">
                 We generally respond to all operational inquiries within 24 hours.
