@@ -25,6 +25,7 @@ export default function CrmDashboard() {
   const [replyText, setReplyText] = useState('')
   const [submittingReply, setSubmittingReply] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [mobileView, setMobileView] = useState('list') // 'list' | 'detail' for responsive mobile handling
   const chatEndRef = useRef(null)
 
   // Fetch all support pipeline tickets safely
@@ -122,8 +123,18 @@ export default function CrmDashboard() {
     }
   })
 
+  // Group messages to display ONLY the last message sent by each unique sender/person
+  const senderMap = new Map()
+  processedMessages.forEach(msg => {
+    const senderKey = msg.profile_id || msg.email?.toLowerCase() || msg.name?.toLowerCase() || msg.id
+    if (!senderMap.has(senderKey)) {
+      senderMap.set(senderKey, msg)
+    }
+  })
+  const latestMessages = Array.from(senderMap.values())
+
   // Filter pipeline messages based on tab view, category, and matching search queries
-  const filteredMessages = processedMessages.filter(msg => {
+  const filteredMessages = latestMessages.filter(msg => {
     const matchesStatus =
       filter === 'all' ? true :
       filter === 'unreplied' ? msg.reply_status === 'unreplied' :
@@ -245,10 +256,10 @@ export default function CrmDashboard() {
       </header>
 
       {/* WORKSPACE AREA */}
-      <main className="relative flex-grow max-w-7xl mx-auto w-full px-6 py-8 z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+      <main className="relative flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         
-        {/* Left Hand Listing Area (7 Columns) */}
-        <div className="lg:col-span-7 flex flex-col space-y-4">
+        {/* Left Hand Listing Area (7 Columns on PC, toggles on mobile) */}
+        <div className={`lg:col-span-7 flex flex-col space-y-4 ${mobileView === 'detail' ? 'hidden lg:flex' : 'flex'}`}>
           
           {/* Controls Bar */}
           <div className="bg-stone-900/40 border border-stone-900 p-4 rounded-2xl space-y-4">
@@ -305,7 +316,7 @@ export default function CrmDashboard() {
             />
           </div>
 
-          {/* Ticket Messages List */}
+          {/* Ticket Messages List (Showing only the latest message per person) */}
           <div className="flex-grow max-h-[550px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
             {loading ? (
               <div className="text-center py-12 text-sm text-stone-400 animate-pulse">
@@ -322,6 +333,7 @@ export default function CrmDashboard() {
                   onClick={() => {
                     setSelectedMessage(msg)
                     setReplyText(msg.reply_message || '')
+                    setMobileView('detail')
                   }}
                   className={`p-5 rounded-2xl border transition-all cursor-pointer text-left ${
                     selectedMessage?.id === msg.id
@@ -362,17 +374,28 @@ export default function CrmDashboard() {
           </div>
         </div>
 
-        {/* Right Hand Interaction / Reply Panel (5 Columns) */}
-        <div className="lg:col-span-5">
+        {/* Right Hand Interaction / Reply Panel (5 Columns on PC, toggles on mobile) */}
+        <div className={`lg:col-span-5 ${mobileView === 'list' && !selectedMessage ? 'hidden lg:block' : mobileView === 'list' ? 'hidden lg:block' : 'block'}`}>
           <div className="bg-stone-900/30 border border-stone-900/80 rounded-3xl p-6 lg:p-8 flex flex-col justify-between h-full sticky top-8 min-h-[550px]">
             {selectedMessage ? (
               <div className="flex flex-col h-full justify-between space-y-6">
                 
+                {/* Mobile Back Button */}
+                <div className="flex items-center justify-between pb-3 border-b border-stone-900 lg:hidden">
+                  <button
+                    onClick={() => setMobileView('list')}
+                    className="flex items-center gap-2 text-xs font-bold text-amber-500 bg-stone-950 px-3 py-1.5 rounded-xl border border-stone-850"
+                  >
+                    ← Back to List
+                  </button>
+                  <span className="text-xs font-mono text-stone-400">{selectedMessage.ticketId}</span>
+                </div>
+
                 {/* --- CHAT FORMAT FOR CM MESSAGES --- */}
                 {selectedMessage.type === 'CM' ? (
                   <div className="flex flex-col h-[460px] justify-between space-y-4">
                     {/* Header info */}
-                    <div className="border-b border-stone-900 pb-3 flex items-center justify-between shrink-0">
+                    <div className="border-b border-stone-900 pb-3 hidden sm:flex items-center justify-between shrink-0">
                       <div>
                         <span className="text-xs font-mono font-bold text-amber-500">{selectedMessage.ticketId}</span>
                         <h3 className="text-base font-black text-white mt-0.5">
@@ -387,8 +410,11 @@ export default function CrmDashboard() {
                       </span>
                     </div>
 
-                    {/* Chat Messages Scroll Area */}
+                    {/* Chat Messages Scroll Area - Tap any message to focus and reply in particular */}
                     <div className="flex-grow overflow-y-auto space-y-4 pr-2 custom-scrollbar bg-stone-950/40 p-3 rounded-2xl border border-stone-900/80">
+                      <div className="text-[10px] text-stone-400 uppercase tracking-wider font-bold text-center py-1">
+                        Tap any message below to focus and reply to it in particular
+                      </div>
                       {customerThread.length === 0 ? (
                         <div className="text-center py-12 text-stone-500 text-xs">No chat history available.</div>
                       ) : (
@@ -405,12 +431,15 @@ export default function CrmDashboard() {
                                   }}
                                   className={`px-4 py-3 max-w-[90%] text-xs shadow-sm leading-relaxed rounded-2xl rounded-tl-sm cursor-pointer border transition ${
                                     isCurrentSelected 
-                                      ? 'bg-stone-850 text-stone-100 border-amber-500/40 ring-1 ring-amber-500/30' 
+                                      ? 'bg-stone-850 text-stone-100 border-amber-500/60 ring-2 ring-amber-500/40 shadow-amber-500/10' 
                                       : 'bg-stone-900 text-stone-200 border-stone-800 hover:bg-stone-850'
                                   }`}
                                 >
                                   <div className="flex items-center justify-between gap-4 mb-1">
-                                    <span className="text-[9px] font-mono font-bold text-amber-400">{msgItem.ticketId}</span>
+                                    <span className="text-[9px] font-mono font-bold text-amber-400 flex items-center gap-1.5">
+                                      {msgItem.ticketId}
+                                      {isCurrentSelected && <span className="bg-amber-500 text-stone-950 px-1.5 py-0.2 rounded font-sans text-[8px] font-extrabold uppercase">In Focus</span>}
+                                    </span>
                                     <span className="text-[9px] text-stone-400">
                                       {new Date(msgItem.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
@@ -440,6 +469,9 @@ export default function CrmDashboard() {
 
                     {/* Chat Reply Form */}
                     <form onSubmit={handleSendReply} className="space-y-3 pt-2 shrink-0">
+                      <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg flex items-center justify-between text-[11px] text-amber-300 font-medium">
+                        <span>Replying to focused ticket: <strong className="font-mono">{selectedMessage.ticketId}</strong></span>
+                      </div>
                       <div className="relative">
                         <textarea
                           required
@@ -447,14 +479,14 @@ export default function CrmDashboard() {
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
                           disabled={selectedMessage.reply_status === 'replied'}
-                          placeholder="Type response for this customer ticket..."
+                          placeholder="Type response for this focused customer ticket..."
                           className="w-full bg-stone-950 border border-stone-900 rounded-xl px-4 py-3 text-stone-100 text-xs focus:outline-none focus:border-amber-500 transition font-medium disabled:opacity-50 resize-none"
                         />
                       </div>
 
                       {selectedMessage.reply_status === 'replied' ? (
                         <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold p-2.5 rounded-xl text-center">
-                          This inquiry has already been resolved and replied.
+                          This specific inquiry has already been resolved and replied.
                         </div>
                       ) : (
                         <button
