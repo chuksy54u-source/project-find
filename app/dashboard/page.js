@@ -34,9 +34,6 @@ export default function DashboardPage() {
   
   const [activeTab, setActiveTab] = useState('overview') 
 
-  // --- MOBILE MENU STATE ---
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
   // --- POPUP & EDIT DETAILS FORM STATE ---
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   const [savingDetails, setSavingDetails] = useState(false)
@@ -362,59 +359,6 @@ export default function DashboardPage() {
     router.push('/login')
   }
 
-  // --- REUSABLE NAVIGATION BUTTONS COMPONENT ---
-  const NavMenuButtons = () => (
-    <>
-      <button 
-        onClick={() => { setActiveTab('overview'); setIsMobileMenuOpen(false); }}
-        className={`w-full flex items-center space-x-3 px-3 py-3 rounded-2xl transition text-left text-xs font-bold ${
-          activeTab === 'overview' 
-            ? 'bg-amber-500/10 text-amber-400 border-l-2 border-amber-500' 
-            : 'text-stone-400 hover:bg-stone-900/50 hover:text-white'
-        }`}
-      >
-        <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-        <span>My Status</span>
-      </button>
-
-      <button 
-        onClick={() => { setActiveTab('interviews'); setIsMobileMenuOpen(false); }}
-        className={`w-full flex items-center justify-between px-3 py-3 rounded-2xl transition text-left text-xs font-bold ${
-          activeTab === 'interviews' 
-            ? 'bg-amber-500/10 text-amber-400 border-l-2 border-amber-500' 
-            : 'text-stone-400 hover:bg-stone-900/50 hover:text-white'
-        }`}
-      >
-        <div className="flex items-center space-x-3">
-          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          <span>My Interviews</span>
-        </div>
-        {paymentStatus !== 'paid' && (
-          <span className="text-[10px] bg-stone-800 text-stone-400 px-1.5 py-0.5 rounded border border-stone-700">Locked</span>
-        )}
-      </button>
-
-      <button 
-        onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
-        className={`w-full flex items-center space-x-3 px-3 py-3 rounded-2xl transition text-left text-xs font-bold ${
-          activeTab === 'settings' 
-            ? 'bg-amber-500/10 text-amber-400 border-l-2 border-amber-500' 
-            : 'text-stone-400 hover:bg-stone-900/50 hover:text-white'
-        }`}
-      >
-        <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        <span>My Details</span>
-      </button>
-    </>
-  )
-
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center space-y-4">
@@ -454,7 +398,7 @@ export default function DashboardPage() {
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <span className="hidden md:inline-flex items-center gap-2 text-xs font-bold text-stone-400 bg-stone-900/80 border border-stone-850 px-3 py-1.5 rounded-xl">
             <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse inline-block"></span>
             Safe & Secure Connection
@@ -465,37 +409,8 @@ export default function DashboardPage() {
           >
             Log Out
           </button>
-
-          {/* HAMBURGER TOGGLE BUTTON (MOBILE ONLY) */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 bg-stone-900/90 border border-stone-850 rounded-xl text-stone-300 hover:text-white focus:outline-none"
-            aria-label="Toggle Menu"
-          >
-            {isMobileMenuOpen ? (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
         </div>
       </header>
-
-      {/* MOBILE DROPDOWN MENU DRAWER */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden relative z-20 px-6 pt-4 pb-2">
-          <div className="bg-stone-950/95 backdrop-blur-xl border border-stone-850/90 rounded-3xl p-4 shadow-2xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
-            <span className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold px-3 pt-1 pb-2">
-              Navigation Menu
-            </span>
-            <NavMenuButtons />
-          </div>
-        </div>
-      )}
 
       <main className="relative flex-grow max-w-7xl mx-auto w-full px-6 py-10 z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
@@ -518,12 +433,58 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* DESKTOP MENU - Hidden on Mobile */}
-          <div className="hidden lg:block bg-stone-950/85 backdrop-blur-md border border-stone-850/70 rounded-3xl p-3 shadow-xl space-y-1">
+          <div className="bg-stone-950/85 backdrop-blur-md border border-stone-850/70 rounded-3xl p-3 shadow-xl space-y-1">
             <span className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold px-3 pt-2 pb-1">
               Menu
             </span>
-            <NavMenuButtons />
+            
+            <button 
+              onClick={() => setActiveTab('overview')}
+              className={`w-full flex items-center space-x-3 px-3 py-3 rounded-2xl transition text-left text-xs font-bold ${
+                activeTab === 'overview' 
+                  ? 'bg-amber-500/10 text-amber-400 border-l-2 border-amber-500' 
+                  : 'text-stone-400 hover:bg-stone-900/50 hover:text-white'
+              }`}
+            >
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span>My Status</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('interviews')}
+              className={`w-full flex items-center justify-between px-3 py-3 rounded-2xl transition text-left text-xs font-bold ${
+                activeTab === 'interviews' 
+                  ? 'bg-amber-500/10 text-amber-400 border-l-2 border-amber-500' 
+                  : 'text-stone-400 hover:bg-stone-900/50 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span>My Interviews</span>
+              </div>
+              {paymentStatus !== 'paid' && (
+                <span className="text-[10px] bg-stone-800 text-stone-400 px-1.5 py-0.5 rounded border border-stone-700">Locked</span>
+              )}
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center space-x-3 px-3 py-3 rounded-2xl transition text-left text-xs font-bold ${
+                activeTab === 'settings' 
+                  ? 'bg-amber-500/10 text-amber-400 border-l-2 border-amber-500' 
+                  : 'text-stone-400 hover:bg-stone-900/50 hover:text-white'
+              }`}
+            >
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>My Details</span>
+            </button>
           </div>
 
           {paymentStatus === 'unpaid' && (
@@ -842,7 +803,7 @@ export default function DashboardPage() {
                       type="text" 
                       disabled 
                       value={fullName}
-                      className="w-full bg-stone-900/60 border border-stone-800 rounded-xl px-4 py-3 text-stone-300 font-medium cursor-not-allowed"
+                      className="w-full bg-stone-900/60 border border-stone-800 rounded-xl px-4 py-3 text-base md:text-xs text-stone-300 font-medium cursor-not-allowed"
                     />
                   </div>
                   <div>
@@ -851,7 +812,7 @@ export default function DashboardPage() {
                       type="text" 
                       disabled 
                       value={phoneNumber}
-                      className="w-full bg-stone-900/60 border border-stone-800 rounded-xl px-4 py-3 text-stone-300 font-medium cursor-not-allowed"
+                      className="w-full bg-stone-900/60 border border-stone-800 rounded-xl px-4 py-3 text-base md:text-xs text-stone-300 font-medium cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -865,7 +826,7 @@ export default function DashboardPage() {
                       placeholder="e.g. Full-Stack Developer"
                       value={formData.target_role}
                       onChange={(e) => setFormData({ ...formData, target_role: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     />
                   </div>
                   <div>
@@ -875,7 +836,7 @@ export default function DashboardPage() {
                       min="0"
                       value={formData.years_of_experience}
                       onChange={(e) => setFormData({ ...formData, years_of_experience: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     />
                   </div>
                 </div>
@@ -887,7 +848,7 @@ export default function DashboardPage() {
                     <select
                       value={formData.employment_status}
                       onChange={(e) => setFormData({ ...formData, employment_status: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     >
                       {EMPLOYMENT_STATUSES.map((status) => (
                         <option key={status} value={status}>{status}</option>
@@ -899,7 +860,7 @@ export default function DashboardPage() {
                     <select
                       value={formData.preferred_work_mode}
                       onChange={(e) => setFormData({ ...formData, preferred_work_mode: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     >
                       {WORK_MODES.map((mode) => (
                         <option key={mode} value={mode}>{mode}</option>
@@ -911,7 +872,7 @@ export default function DashboardPage() {
                     <select
                       value={formData.notice_period}
                       onChange={(e) => setFormData({ ...formData, notice_period: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     >
                       {NOTICE_PERIODS.map((period) => (
                         <option key={period} value={period}>{period}</option>
@@ -929,7 +890,7 @@ export default function DashboardPage() {
                       placeholder="e.g. 500,000 / month"
                       value={formData.expected_salary}
                       onChange={(e) => setFormData({ ...formData, expected_salary: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     />
                   </div>
                   <div>
@@ -937,7 +898,7 @@ export default function DashboardPage() {
                     <select
                       value={formData.salary_currency}
                       onChange={(e) => setFormData({ ...formData, salary_currency: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     >
                       {CURRENCIES.map((curr) => (
                         <option key={curr} value={curr}>{curr}</option>
@@ -955,7 +916,7 @@ export default function DashboardPage() {
                       placeholder="e.g. Lagos"
                       value={formData.location_city}
                       onChange={(e) => setFormData({ ...formData, location_city: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     />
                   </div>
                   <div>
@@ -964,7 +925,7 @@ export default function DashboardPage() {
                       type="text" 
                       value={formData.location_country}
                       onChange={(e) => setFormData({ ...formData, location_country: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     />
                   </div>
                 </div>
@@ -991,7 +952,7 @@ export default function DashboardPage() {
                       placeholder="https://linkedin.com/in/username"
                       value={formData.linkedin_url}
                       onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     />
                   </div>
                   <div>
@@ -1001,7 +962,7 @@ export default function DashboardPage() {
                       placeholder="https://myportfolio.com"
                       value={formData.portfolio_url}
                       onChange={(e) => setFormData({ ...formData, portfolio_url: e.target.value })}
-                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                      className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                     />
                   </div>
                 </div>
@@ -1015,7 +976,7 @@ export default function DashboardPage() {
                       placeholder="e.g. React, Python, Customer Care"
                       value={skillInput}
                       onChange={(e) => setSkillInput(e.target.value)}
-                      className="flex-grow bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-2.5 text-white focus:outline-none"
+                      className="flex-grow bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none"
                     />
                     <button
                       type="button"
@@ -1043,7 +1004,7 @@ export default function DashboardPage() {
                     placeholder="Briefly describe your core strengths and what kind of team you excel in..."
                     value={formData.bio_summary}
                     onChange={(e) => setFormData({ ...formData, bio_summary: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    className="w-full bg-stone-900 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-base md:text-xs text-white focus:outline-none"
                   />
                 </div>
 
@@ -1065,17 +1026,18 @@ export default function DashboardPage() {
 
       {/* ONBOARDING MODAL POPUP */}
       {showOnboardingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-stone-950 border border-amber-500/30 w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-stone-950 border-0 sm:border border-amber-500/30 w-full sm:max-w-2xl h-full sm:h-auto rounded-none sm:rounded-3xl p-5 sm:p-8 shadow-2xl relative max-h-[100vh] sm:max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col justify-between sm:block">
             
             <button 
               onClick={() => setShowOnboardingModal(false)}
-              className="absolute top-6 right-6 text-stone-400 hover:text-white text-lg font-bold"
+              className="absolute top-4 right-4 sm:top-6 sm:p-2 sm:right-6 text-stone-400 hover:text-white text-xl font-bold min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Close modal"
             >
               ✕
             </button>
 
-            <div className="mb-6">
+            <div className="mb-6 pt-2 sm:pt-0">
               <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 Action Required
               </span>
@@ -1095,7 +1057,7 @@ export default function DashboardPage() {
                     placeholder="e.g. Frontend Engineer, Accountant"
                     value={formData.target_role}
                     onChange={(e) => setFormData({ ...formData, target_role: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <div>
@@ -1106,7 +1068,7 @@ export default function DashboardPage() {
                     min="0"
                     value={formData.years_of_experience}
                     onChange={(e) => setFormData({ ...formData, years_of_experience: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -1117,7 +1079,7 @@ export default function DashboardPage() {
                   <select
                     value={formData.employment_status}
                     onChange={(e) => setFormData({ ...formData, employment_status: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none focus:border-amber-500"
                   >
                     {EMPLOYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -1127,7 +1089,7 @@ export default function DashboardPage() {
                   <select
                     value={formData.preferred_work_mode}
                     onChange={(e) => setFormData({ ...formData, preferred_work_mode: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none focus:border-amber-500"
                   >
                     {WORK_MODES.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
@@ -1137,7 +1099,7 @@ export default function DashboardPage() {
                   <select
                     value={formData.notice_period}
                     onChange={(e) => setFormData({ ...formData, notice_period: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none focus:border-amber-500"
                   >
                     {NOTICE_PERIODS.map(np => <option key={np} value={np}>{np}</option>)}
                   </select>
@@ -1153,7 +1115,7 @@ export default function DashboardPage() {
                     placeholder="e.g. 400,000"
                     value={formData.expected_salary}
                     onChange={(e) => setFormData({ ...formData, expected_salary: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <div>
@@ -1161,7 +1123,7 @@ export default function DashboardPage() {
                   <select
                     value={formData.salary_currency}
                     onChange={(e) => setFormData({ ...formData, salary_currency: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none focus:border-amber-500"
                   >
                     {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -1176,7 +1138,7 @@ export default function DashboardPage() {
                     placeholder="https://linkedin.com/in/..."
                     value={formData.linkedin_url}
                     onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <div>
@@ -1186,7 +1148,7 @@ export default function DashboardPage() {
                     placeholder="https://..."
                     value={formData.portfolio_url}
                     onChange={(e) => setFormData({ ...formData, portfolio_url: e.target.value })}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-2.5 text-base md:text-xs text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -1210,9 +1172,9 @@ export default function DashboardPage() {
       </footer>
 
       {/* WHATSAPP-STYLE CHAT BUBBLE WIDGET */}
-      <div className="fixed bottom-6 right-6 z-50 font-sans text-stone-100 flex items-center space-x-3">
+      <div className="fixed bottom-6 right-6 z-50 font-sans text-stone-100 flex items-center space-x-3 pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)]">
         {isCrmOpen ? (
-          <div className="w-80 md:w-96 h-[500px] flex flex-col bg-stone-950/95 border border-amber-500/30 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="w-[calc(100vw-2rem)] sm:w-96 h-[80vh] sm:h-[500px] flex flex-col bg-stone-950/95 border border-amber-500/30 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-200">
             
             <div className="bg-stone-900/90 border-b border-stone-800/60 p-4 flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-3">
@@ -1230,7 +1192,8 @@ export default function DashboardPage() {
               </div>
               <button 
                 onClick={() => setIsCrmOpen(false)}
-                className="text-stone-400 hover:text-white transition p-1.5 rounded-lg hover:bg-stone-800/80"
+                className="text-stone-400 hover:text-white transition p-1.5 rounded-lg hover:bg-stone-800/80 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Close chat"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1298,12 +1261,12 @@ export default function DashboardPage() {
                   value={crmMessage}
                   onChange={(e) => setCrmMessage(e.target.value)}
                   placeholder="Type a message..."
-                  className="flex-grow bg-stone-950/80 border border-stone-700 rounded-full px-4 py-2.5 text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-500/50 transition"
+                  className="flex-grow bg-stone-950/80 border border-stone-700 rounded-full px-4 py-2.5 text-base md:text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-500/50 transition"
                 />
                 <button
                   type="submit"
                   disabled={crmSending || !crmMessage.trim()}
-                  className="h-10 w-10 shrink-0 bg-amber-500 hover:bg-amber-400 disabled:bg-stone-800 disabled:text-stone-600 text-stone-950 rounded-full flex items-center justify-center transition shadow-md"
+                  className="h-10 w-10 shrink-0 bg-amber-500 hover:bg-amber-400 disabled:bg-stone-800 disabled:text-stone-600 text-stone-950 rounded-full flex items-center justify-center transition shadow-md min-h-[44px] min-w-[44px]"
                 >
                   {crmSending ? (
                     <div className="h-4 w-4 border-2 border-stone-950/20 border-t-stone-950 rounded-full animate-spin"></div>
