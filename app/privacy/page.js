@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 export default function LegalPortalPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('privacy')
+  const [isMobileTabsOpen, setIsMobileTabsOpen] = useState(false)
 
   const legalSections = [
     { id: 'privacy', label: 'Privacy Policy' },
@@ -13,6 +14,8 @@ export default function LegalPortalPage() {
     { id: 'cookies', label: 'Cookie Policy' },
     { id: 'security', label: 'Data Security' },
   ]
+
+  const activeLabel = legalSections.find((s) => s.id === activeTab)?.label
 
   const handlePrint = () => {
     window.print()
@@ -275,26 +278,83 @@ export default function LegalPortalPage() {
       <main className="relative max-w-7xl mx-auto px-6 pt-12 pb-24 z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* LEFT COLUMN: DIRECTORY SIDEBAR */}
-        <aside className="lg:col-span-3 space-y-2 lg:sticky lg:top-24">
-          <div className="px-4 pb-4 border-b border-stone-900/60 lg:border-none">
-            <span className="text-xs font-mono font-bold tracking-widest text-stone-500 uppercase">Legal Directory</span>
-            <h2 className="text-lg font-black text-white mt-1">Project Find Legal</h2>
+        <aside className="lg:col-span-3 lg:sticky lg:top-24">
+          
+          {/* MOBILE ONLY: Hamburger Bar & Collapsible Menu */}
+          <div className="lg:hidden mb-4 bg-stone-900/80 border border-stone-800/80 rounded-2xl p-3 shadow-lg">
+            <button
+              onClick={() => setIsMobileTabsOpen(!isMobileTabsOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 text-stone-200 focus:outline-none"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-xs font-mono font-bold tracking-widest text-amber-400 uppercase">
+                  Tab:
+                </span>
+                <span className="text-sm font-extrabold text-white">
+                  {activeLabel}
+                </span>
+              </div>
+
+              {/* Hamburger / Close Icon */}
+              <div className="p-1.5 rounded-lg bg-stone-800 text-amber-400">
+                {isMobileTabsOpen ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </div>
+            </button>
+
+            {/* Mobile Dropdown Options */}
+            {isMobileTabsOpen && (
+              <div className="mt-3 pt-3 border-t border-stone-800 space-y-1">
+                {legalSections.map((sect) => (
+                  <button
+                    key={sect.id}
+                    onClick={() => {
+                      setActiveTab(sect.id)
+                      setIsMobileTabsOpen(false)
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition ${
+                      activeTab === sect.id
+                        ? "bg-amber-500/10 text-amber-400 border-l-2 border-amber-400"
+                        : "text-stone-400 hover:text-stone-200 hover:bg-stone-950/50"
+                    }`}
+                  >
+                    {sect.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <nav className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-visible gap-1 pb-3 lg:pb-0 border-b lg:border-none border-stone-900/40">
-            {legalSections.map((sect) => (
-              <button
-                key={sect.id}
-                onClick={() => setActiveTab(sect.id)}
-                className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition whitespace-nowrap lg:whitespace-normal shrink-0 ${
-                  activeTab === sect.id
-                    ? "bg-amber-500/10 text-amber-400 border-l-2 border-amber-400"
-                    : "text-stone-400 hover:text-stone-200 hover:bg-stone-900/40"
-                }`}
-              >
-                {sect.label}
-              </button>
-            ))}
-          </nav>
+
+          {/* DESKTOP ONLY: Standard Sticky Directory Sidebar */}
+          <div className="hidden lg:block space-y-2">
+            <div className="px-4 pb-4">
+              <span className="text-xs font-mono font-bold tracking-widest text-stone-500 uppercase">Legal Directory</span>
+              <h2 className="text-lg font-black text-white mt-1">Project Find Legal</h2>
+            </div>
+            <nav className="flex flex-col gap-1">
+              {legalSections.map((sect) => (
+                <button
+                  key={sect.id}
+                  onClick={() => setActiveTab(sect.id)}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition ${
+                    activeTab === sect.id
+                      ? "bg-amber-500/10 text-amber-400 border-l-2 border-amber-400"
+                      : "text-stone-400 hover:text-stone-200 hover:bg-stone-900/40"
+                  }`}
+                >
+                  {sect.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+
         </aside>
 
         {/* RIGHT COLUMN: MAIN CONTENT CONTAINER */}

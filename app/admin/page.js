@@ -42,6 +42,7 @@ export default function AdminDashboard() {
   // UI Interactive States
   const [activeTab, setActiveTab] = useState('payments') // 'payments' | 'interviews' | 'candidates'
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false) // Mobile hamburger toggle
   
   // Dynamic Input States for Interviews
   const [meetingInputs, setMeetingInputs] = useState({}) 
@@ -244,6 +245,17 @@ export default function AdminDashboard() {
     router.push('/login')
   }
 
+  const tabLabels = {
+    payments: `Pending Payments (${pendingPayments.length})`,
+    interviews: `Schedules & Interviews (${interviews.length})`,
+    candidates: `Verified Profiles (${paidCandidates.length})`
+  }
+
+  const handleSelectTab = (tab) => {
+    setActiveTab(tab)
+    setMobileMenuOpen(false)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-950 flex items-center justify-center text-white text-sm">
@@ -256,41 +268,42 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-stone-950 text-stone-100 font-sans selection:bg-amber-600 selection:text-white">
       <div className="h-1 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 w-full" />
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
         
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-stone-900/40 p-6 rounded-3xl border border-stone-900 backdrop-blur-md">
+        {/* HEADER */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-stone-900/40 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-900 backdrop-blur-md">
           <div>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
               <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">Project Find Platform Admin</p>
             </div>
-            <h1 className="text-3xl font-black text-white tracking-tight mt-1">Command Control Center</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1">Command Control Center</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto">
             <button 
               onClick={handleGlobalReset}
-              className="px-5 py-2.5 bg-red-950/20 border border-red-900/50 hover:bg-red-950/50 text-red-400 text-xs font-bold rounded-xl transition"
+              className="flex-1 md:flex-none px-3 sm:px-5 py-2.5 bg-red-950/20 border border-red-900/50 hover:bg-red-950/50 text-red-400 text-xs font-bold rounded-xl transition text-center"
             >
-              🔄 Reset Recruitment Cycle
+              🔄 Reset Cycle
             </button>
             <button 
               onClick={handleLogout}
-              className="px-5 py-2.5 bg-stone-900 hover:bg-stone-850 text-stone-300 border border-stone-800 text-xs font-bold rounded-xl transition"
+              className="px-4 sm:px-5 py-2.5 bg-stone-900 hover:bg-stone-850 text-stone-300 border border-stone-800 text-xs font-bold rounded-xl transition"
             >
               Log Out
             </button>
           </div>
         </header>
 
-        {/* TAB CONTROLS */}
-        <div className="flex border-b border-stone-900 gap-6">
+        {/* TAB CONTROLS (DESKTOP) */}
+        <div className="hidden md:flex border-b border-stone-900 gap-6">
           <button 
             onClick={() => setActiveTab('payments')}
             className={`pb-4 text-xs font-black uppercase tracking-wider relative transition-all ${
               activeTab === 'payments' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300'
             }`}
           >
-            Pending Payments ({pendingPayments.length})
+            {tabLabels.payments}
           </button>
           <button 
             onClick={() => setActiveTab('interviews')}
@@ -298,7 +311,7 @@ export default function AdminDashboard() {
               activeTab === 'interviews' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300'
             }`}
           >
-            Schedules & Interviews ({interviews.length})
+            {tabLabels.interviews}
           </button>
           <button 
             onClick={() => setActiveTab('candidates')}
@@ -306,269 +319,486 @@ export default function AdminDashboard() {
               activeTab === 'candidates' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300'
             }`}
           >
-            Verified Profiles ({paidCandidates.length})
+            {tabLabels.candidates}
           </button>
+        </div>
+
+        {/* HAMBURGER MENU (MOBILE ONLY) */}
+        <div className="block md:hidden">
+          <div className="relative">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="w-full flex items-center justify-between bg-stone-900 border border-stone-800 px-4 py-3 rounded-xl text-amber-500 text-xs font-bold tracking-wider uppercase shadow-lg"
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-stone-400 font-normal">Tab:</span>
+                {tabLabels[activeTab]}
+              </span>
+              {/* Hamburger / Close Icon */}
+              <svg 
+                className="w-5 h-5 text-amber-500 transition-transform duration-200" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+
+            {/* Mobile Navigation Dropdown Menu */}
+            {mobileMenuOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-stone-900/95 border border-stone-800 rounded-xl overflow-hidden shadow-2xl z-40 backdrop-blur-lg divide-y divide-stone-850">
+                <button
+                  onClick={() => handleSelectTab('payments')}
+                  className={`w-full text-left px-4 py-3.5 text-xs font-extrabold uppercase tracking-wider transition ${
+                    activeTab === 'payments' ? 'bg-amber-500/10 text-amber-500 border-l-4 border-amber-500' : 'text-stone-400 hover:bg-stone-850'
+                  }`}
+                >
+                  {tabLabels.payments}
+                </button>
+                <button
+                  onClick={() => handleSelectTab('interviews')}
+                  className={`w-full text-left px-4 py-3.5 text-xs font-extrabold uppercase tracking-wider transition ${
+                    activeTab === 'interviews' ? 'bg-amber-500/10 text-amber-500 border-l-4 border-amber-500' : 'text-stone-400 hover:bg-stone-850'
+                  }`}
+                >
+                  {tabLabels.interviews}
+                </button>
+                <button
+                  onClick={() => handleSelectTab('candidates')}
+                  className={`w-full text-left px-4 py-3.5 text-xs font-extrabold uppercase tracking-wider transition ${
+                    activeTab === 'candidates' ? 'bg-amber-500/10 text-amber-500 border-l-4 border-amber-500' : 'text-stone-400 hover:bg-stone-850'
+                  }`}
+                >
+                  {tabLabels.candidates}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <main className="min-h-[500px]">
           
           {/* TAB 1: PENDING PAYMENTS LIST */}
           {activeTab === 'payments' && (
-            <div className="bg-stone-900/20 border border-stone-900 rounded-3xl overflow-hidden p-6 space-y-4">
-              <h2 className="text-lg font-bold text-white mb-4">Pending Proof Submissions</h2>
+            <div className="bg-stone-900/20 border border-stone-900 rounded-2xl sm:rounded-3xl overflow-hidden p-4 sm:p-6 space-y-4">
+              <h2 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-4">Pending Proof Submissions</h2>
               
               {pendingPayments.length === 0 ? (
                 <div className="text-center py-12 text-xs text-stone-500 font-medium">
                   No manual bank transfer verifications pending right now.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-stone-850 text-stone-500 font-bold uppercase tracking-wider">
-                        <th className="pb-3">Candidate</th>
-                        <th className="pb-3">Email & Contact</th>
-                        <th className="pb-3">Sender Name</th>
-                        <th className="pb-3">Amount</th>
-                        <th className="pb-3">Submitted</th>
-                        <th className="pb-3">Proof Receipt</th>
-                        <th className="pb-3 text-right">Decisions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-900/60 font-medium text-stone-300">
-                      {pendingPayments.map((p) => (
-                        <tr key={p.id} className="hover:bg-stone-950/20">
-                          <td className="py-4 font-bold text-white">
-                            {p.profiles?.full_name || 'N/A'}
-                          </td>
-                          <td className="py-4 text-stone-400">
-                            <div>{p.profiles?.email || 'Unknown'}</div>
-                            <div className="text-[10px] text-stone-500">{p.profiles?.phone_number || 'No phone'}</div>
-                          </td>
-                          <td className="py-4 font-bold text-white">{p.sender_name}</td>
-                          <td className="py-4 font-bold text-amber-500">₦{p.amount ? p.amount.toLocaleString() : '0'}</td>
-                          <td className="py-4 text-[10px] text-stone-500">
-                            {new Date(p.created_at).toLocaleString()}
-                          </td>
-                          <td className="py-4">
-                            <button 
-                              onClick={() => setSelectedReceiptUrl(p.receipt_url)}
-                              className="px-3 py-1.5 bg-stone-900 hover:bg-stone-850 text-amber-500 border border-stone-850 rounded-lg text-[10px] font-black"
-                            >
-                              👀 View Receipt
-                            </button>
-                          </td>
-                          <td className="py-4 text-right space-x-2">
+                <>
+                  {/* MOBILE STACKED CARDS VIEW */}
+                  <div className="block md:hidden space-y-4">
+                    {pendingPayments.map((p) => (
+                      <div key={p.id} className="bg-stone-950/60 border border-stone-850 rounded-xl p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-bold text-white text-sm">{p.profiles?.full_name || 'N/A'}</p>
+                            <p className="text-[11px] text-stone-400">{p.profiles?.email || 'Unknown'}</p>
+                            <p className="text-[10px] text-stone-500">{p.profiles?.phone_number || 'No phone'}</p>
+                          </div>
+                          <p className="font-extrabold text-amber-500 text-sm">₦{p.amount ? p.amount.toLocaleString() : '0'}</p>
+                        </div>
+                        <div className="text-[10px] text-stone-500 flex justify-between items-center pt-2 border-t border-stone-900">
+                          <span>Sender: <strong className="text-stone-300">{p.sender_name}</strong></span>
+                          <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex flex-col gap-2 pt-2">
+                          <button 
+                            onClick={() => setSelectedReceiptUrl(p.receipt_url)}
+                            className="w-full py-2 bg-stone-900 hover:bg-stone-850 text-amber-500 border border-stone-800 rounded-lg text-xs font-bold"
+                          >
+                            👀 View Receipt
+                          </button>
+                          <div className="grid grid-cols-2 gap-2">
                             <button 
                               onClick={() => handlePaymentResolution(p.id, p.user_id, 'approved')}
-                              className="px-3 py-1.5 bg-green-950/40 hover:bg-green-900/30 text-green-400 border border-green-900/20 rounded-lg text-[10px] font-black"
+                              className="py-2 bg-green-950/40 text-green-400 border border-green-900/30 rounded-lg text-xs font-bold text-center"
                             >
                               Approve
                             </button>
                             <button 
                               onClick={() => handlePaymentResolution(p.id, p.user_id, 'rejected')}
-                              className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/30 text-red-400 border border-red-900/20 rounded-lg text-[10px] font-black"
+                              className="py-2 bg-red-950/40 text-red-400 border border-red-900/30 rounded-lg text-xs font-bold text-center"
                             >
                               Reject
                             </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 2: SCHEDULES & MEETINGS */}
-          {activeTab === 'interviews' && (
-            <div className="bg-stone-900/20 border border-stone-900 rounded-3xl overflow-hidden p-6 space-y-4">
-              <h2 className="text-lg font-bold text-white mb-4">Interviews Pipeline</h2>
-              
-              {interviews.length === 0 ? (
-                <div className="text-center py-12 text-xs text-stone-500 font-medium">
-                  Approved payments automatically generate scheduler objects here. No candidates to display.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-stone-850 text-stone-500 font-bold uppercase tracking-wider">
-                        <th className="pb-3">Candidate Info</th>
-                        <th className="pb-3">Contact</th>
-                        <th className="pb-3">Status</th>
-                        <th className="pb-3">Resume</th>
-                        <th className="pb-3">Scheduling Data Inputs</th>
-                        <th className="pb-3 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-900/60 font-medium text-stone-300">
-                      {interviews.map((i) => (
-                        <tr key={i.id} className="hover:bg-stone-950/20 align-top">
-                          <td className="py-4">
-                            <div className="font-bold text-white">{i.profiles?.full_name || 'N/A'}</div>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {i.profiles?.interests && i.profiles.interests.length > 0 ? (
-                                i.profiles.interests.map((int, idx) => (
-                                  <span key={idx} className="bg-stone-950 border border-stone-850 text-stone-400 px-1.5 py-0.5 rounded text-[8px]">
-                                    {int}
-                                  </span>
-                                ))
-                              ) : null}
-                            </div>
-                          </td>
-                          <td className="py-4 text-stone-400">
-                            <div>{i.profiles?.email || 'N/A'}</div>
-                            <div className="text-[10px] text-stone-500">{i.profiles?.phone_number || 'N/A'}</div>
-                          </td>
-                          <td className="py-4">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                              i.status === 'scheduled' 
-                                ? 'bg-green-500/15 text-green-400' 
-                                : 'bg-amber-500/15 text-amber-400'
-                            }`}>
-                              {i.status.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="py-4">
-                            {i.cv_url ? (
-                              <a 
-                                href={i.cv_url} 
-                                target="_blank" 
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-850 border border-stone-800 text-stone-300 hover:text-white rounded-lg text-[10px] font-bold"
-                              >
-                                📥 Download CV
-                              </a>
-                            ) : (
-                              <span className="text-stone-600 italic text-[10px]">No CV uploaded</span>
-                            )}
-                          </td>
-                          
-                          <td className="py-4 space-y-2 max-w-sm">
-                            <div className="grid grid-cols-2 gap-2">
-                              <input 
-                                type="text"
-                                placeholder="Company Name"
-                                value={companyInputs[i.id] || ''}
-                                onChange={(e) => setCompanyInputs({...companyInputs, [i.id]: e.target.value})}
-                                className="bg-stone-950 border border-stone-850 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-amber-500"
-                              />
-                              <input 
-                                type="text"
-                                placeholder="Role Title"
-                                value={roleInputs[i.id] || ''}
-                                onChange={(e) => setRoleInputs({...roleInputs, [i.id]: e.target.value})}
-                                className="bg-stone-950 border border-stone-850 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-amber-500"
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <input 
-                                type="datetime-local"
-                                value={dateInputs[i.id] || ''}
-                                onChange={(e) => setDateInputs({...dateInputs, [i.id]: e.target.value})}
-                                className="bg-stone-950 border border-stone-850 rounded px-2 py-1 text-[11px] text-stone-300 focus:outline-none focus:border-amber-500"
-                              />
-                              <input 
-                                type="text"
-                                placeholder="Meeting Link"
-                                value={meetingInputs[i.id] || ''}
-                                onChange={(e) => setMeetingInputs({...meetingInputs, [i.id]: e.target.value})}
-                                className="bg-stone-950 border border-stone-850 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-amber-500"
-                              />
-                            </div>
-                            <div>
-                              <textarea 
-                                placeholder="Additional Notes"
-                                value={notesInputs[i.id] || ''}
-                                onChange={(e) => setNotesInputs({...notesInputs, [i.id]: e.target.value})}
-                                rows={2}
-                                className="w-full bg-stone-950 border border-stone-850 rounded px-2 py-1.5 text-[11px] text-white focus:outline-none focus:border-amber-500 resize-none"
-                              />
-                            </div>
-                          </td>
-                          <td className="py-4 text-right">
-                            <button 
-                              onClick={() => handleCreateOrUpdateInterview(i.id)}
-                              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-lg text-[10px] font-black"
-                            >
-                              Save Details
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: REGISTERED USERS DIRECTORY */}
-          {activeTab === 'candidates' && (
-            <div className="bg-stone-900/20 border border-stone-900 rounded-3xl overflow-hidden p-6 space-y-6">
-              
-              {/* TOP SUMMARY STATS BAR */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-stone-950/50 border border-stone-900 rounded-2xl p-4 flex flex-col justify-center">
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">Total Registered Candidates</p>
-                  <p className="text-3xl font-black text-white mt-1">{profiles.length}</p>
-                </div>
-                <div className="bg-emerald-950/10 border border-emerald-900/20 rounded-2xl p-4 flex flex-col justify-center">
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-500">Verified & Paid Candidates</p>
-                  <p className="text-3xl font-black text-emerald-400 mt-1">{paidCandidates.length}</p>
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-lg font-bold text-white mb-4">Verified Paid Candidates Directory</h2>
-                
-                {paidCandidates.length === 0 ? (
-                  <div className="text-center py-12 text-xs text-stone-500 font-medium">
-                    No paid candidates exist on the platform yet.
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ) : (
-                  <div className="overflow-x-auto">
+
+                  {/* DESKTOP TABLE VIEW */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-stone-850 text-stone-500 font-bold uppercase tracking-wider">
-                          <th className="pb-3">Full Name</th>
-                          <th className="pb-3">Email</th>
-                          <th className="pb-3">Phone</th>
-                          <th className="pb-3">Payment State</th>
-                          <th className="pb-3">Interests Specified</th>
+                          <th className="pb-3">Candidate</th>
+                          <th className="pb-3">Email & Contact</th>
+                          <th className="pb-3">Sender Name</th>
+                          <th className="pb-3">Amount</th>
+                          <th className="pb-3">Submitted</th>
+                          <th className="pb-3">Proof Receipt</th>
+                          <th className="pb-3 text-right">Decisions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-900/60 font-medium text-stone-300">
-                        {paidCandidates.map((p) => (
+                        {pendingPayments.map((p) => (
                           <tr key={p.id} className="hover:bg-stone-950/20">
-                            <td className="py-4 font-bold text-white">{p.full_name || 'N/A'}</td>
-                            <td className="py-4 text-stone-400">{p.email || 'N/A'}</td>
-                            <td className="py-4 text-stone-400">{p.phone_number || 'N/A'}</td>
-                            <td className="py-4">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-black bg-green-500/10 text-green-400 border border-green-500/20">
-                                {p.payment_status || 'unpaid'}
-                              </span>
+                            <td className="py-4 font-bold text-white">
+                              {p.profiles?.full_name || 'N/A'}
+                            </td>
+                            <td className="py-4 text-stone-400">
+                              <div>{p.profiles?.email || 'Unknown'}</div>
+                              <div className="text-[10px] text-stone-500">{p.profiles?.phone_number || 'No phone'}</div>
+                            </td>
+                            <td className="py-4 font-bold text-white">{p.sender_name}</td>
+                            <td className="py-4 font-bold text-amber-500">₦{p.amount ? p.amount.toLocaleString() : '0'}</td>
+                            <td className="py-4 text-[10px] text-stone-500">
+                              {new Date(p.created_at).toLocaleString()}
                             </td>
                             <td className="py-4">
-                              <div className="flex flex-wrap gap-1">
-                                {p.interests && p.interests.length > 0 ? (
-                                  p.interests.map((int, idx) => (
-                                    <span key={idx} className="bg-stone-900 border border-stone-800 text-stone-400 px-2 py-0.5 rounded text-[9px]">
-                                      {int}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-stone-600 italic text-[10px]">None</span>
-                                )}
-                              </div>
+                              <button 
+                                onClick={() => setSelectedReceiptUrl(p.receipt_url)}
+                                className="px-3 py-1.5 bg-stone-900 hover:bg-stone-850 text-amber-500 border border-stone-850 rounded-lg text-[10px] font-black"
+                              >
+                                👀 View Receipt
+                              </button>
+                            </td>
+                            <td className="py-4 text-right space-x-2">
+                              <button 
+                                onClick={() => handlePaymentResolution(p.id, p.user_id, 'approved')}
+                                className="px-3 py-1.5 bg-green-950/40 hover:bg-green-900/30 text-green-400 border border-green-900/20 rounded-lg text-[10px] font-black"
+                              >
+                                Approve
+                              </button>
+                              <button 
+                                onClick={() => handlePaymentResolution(p.id, p.user_id, 'rejected')}
+                                className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/30 text-red-400 border border-red-900/20 rounded-lg text-[10px] font-black"
+                              >
+                                Reject
+                              </button>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: SCHEDULES & MEETINGS */}
+          {activeTab === 'interviews' && (
+            <div className="bg-stone-900/20 border border-stone-900 rounded-2xl sm:rounded-3xl overflow-hidden p-4 sm:p-6 space-y-4">
+              <h2 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-4">Interviews Pipeline</h2>
+              
+              {interviews.length === 0 ? (
+                <div className="text-center py-12 text-xs text-stone-500 font-medium">
+                  Approved payments automatically generate scheduler objects here. No candidates to display.
+                </div>
+              ) : (
+                <>
+                  {/* MOBILE INTERVIEWS CARDS */}
+                  <div className="block md:hidden space-y-4">
+                    {interviews.map((i) => (
+                      <div key={i.id} className="bg-stone-950/60 border border-stone-850 rounded-xl p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-bold text-white text-sm">{i.profiles?.full_name || 'N/A'}</p>
+                            <p className="text-[11px] text-stone-400">{i.profiles?.email || 'N/A'}</p>
+                            <p className="text-[10px] text-stone-500">{i.profiles?.phone_number || 'N/A'}</p>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                            i.status === 'scheduled' ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'
+                          }`}>
+                            {i.status.replace('_', ' ')}
+                          </span>
+                        </div>
+
+                        {/* Resume Link */}
+                        <div className="pt-1">
+                          {i.cv_url ? (
+                            <a 
+                              href={i.cv_url} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-850 border border-stone-800 text-stone-300 rounded-lg text-xs font-bold"
+                            >
+                              📥 Download CV
+                            </a>
+                          ) : (
+                            <span className="text-stone-600 italic text-[10px]">No CV uploaded</span>
+                          )}
+                        </div>
+
+                        {/* Inputs Container */}
+                        <div className="space-y-2 pt-2 border-t border-stone-900">
+                          <input 
+                            type="text"
+                            placeholder="Company Name"
+                            value={companyInputs[i.id] || ''}
+                            onChange={(e) => setCompanyInputs({...companyInputs, [i.id]: e.target.value})}
+                            className="w-full bg-stone-950 border border-stone-850 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                          />
+                          <input 
+                            type="text"
+                            placeholder="Role Title"
+                            value={roleInputs[i.id] || ''}
+                            onChange={(e) => setRoleInputs({...roleInputs, [i.id]: e.target.value})}
+                            className="w-full bg-stone-950 border border-stone-850 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                          />
+                          <input 
+                            type="datetime-local"
+                            value={dateInputs[i.id] || ''}
+                            onChange={(e) => setDateInputs({...dateInputs, [i.id]: e.target.value})}
+                            className="w-full bg-stone-950 border border-stone-850 rounded-lg px-3 py-2 text-xs text-stone-300 focus:outline-none focus:border-amber-500"
+                          />
+                          <input 
+                            type="text"
+                            placeholder="Meeting Link"
+                            value={meetingInputs[i.id] || ''}
+                            onChange={(e) => setMeetingInputs({...meetingInputs, [i.id]: e.target.value})}
+                            className="w-full bg-stone-950 border border-stone-850 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                          />
+                          <textarea 
+                            placeholder="Additional Notes"
+                            value={notesInputs[i.id] || ''}
+                            onChange={(e) => setNotesInputs({...notesInputs, [i.id]: e.target.value})}
+                            rows={2}
+                            className="w-full bg-stone-950 border border-stone-850 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"
+                          />
+                        </div>
+
+                        <button 
+                          onClick={() => handleCreateOrUpdateInterview(i.id)}
+                          className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-lg text-xs font-extrabold"
+                        >
+                          Save Details
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* DESKTOP TABLE VIEW */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-stone-850 text-stone-500 font-bold uppercase tracking-wider">
+                          <th className="pb-3">Candidate Info</th>
+                          <th className="pb-3">Contact</th>
+                          <th className="pb-3">Status</th>
+                          <th className="pb-3">Resume</th>
+                          <th className="pb-3">Scheduling Data Inputs</th>
+                          <th className="pb-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-900/60 font-medium text-stone-300">
+                        {interviews.map((i) => (
+                          <tr key={i.id} className="hover:bg-stone-950/20 align-top">
+                            <td className="py-4">
+                              <div className="font-bold text-white">{i.profiles?.full_name || 'N/A'}</div>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {i.profiles?.interests && i.profiles.interests.length > 0 ? (
+                                  i.profiles.interests.map((int, idx) => (
+                                    <span key={idx} className="bg-stone-950 border border-stone-850 text-stone-400 px-1.5 py-0.5 rounded text-[8px]">
+                                      {int}
+                                    </span>
+                                  ))
+                                ) : null}
+                              </div>
+                            </td>
+                            <td className="py-4 text-stone-400">
+                              <div>{i.profiles?.email || 'N/A'}</div>
+                              <div className="text-[10px] text-stone-500">{i.profiles?.phone_number || 'N/A'}</div>
+                            </td>
+                            <td className="py-4">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                                i.status === 'scheduled' 
+                                  ? 'bg-green-500/15 text-green-400' 
+                                  : 'bg-amber-500/15 text-amber-400'
+                              }`}>
+                                {i.status.replace('_', ' ')}
+                              </span>
+                            </td>
+                            <td className="py-4">
+                              {i.cv_url ? (
+                                <a 
+                                  href={i.cv_url} 
+                                  target="_blank" 
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-850 border border-stone-800 text-stone-300 hover:text-white rounded-lg text-[10px] font-bold"
+                                >
+                                  📥 Download CV
+                                </a>
+                              ) : (
+                                <span className="text-stone-600 italic text-[10px]">No CV uploaded</span>
+                              )}
+                            </td>
+                            
+                            <td className="py-4 space-y-2 max-w-sm">
+                              <div className="grid grid-cols-2 gap-2">
+                                <input 
+                                  type="text"
+                                  placeholder="Company Name"
+                                  value={companyInputs[i.id] || ''}
+                                  onChange={(e) => setCompanyInputs({...companyInputs, [i.id]: e.target.value})}
+                                  className="bg-stone-950 border border-stone-850 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-amber-500"
+                                />
+                                <input 
+                                  type="text"
+                                  placeholder="Role Title"
+                                  value={roleInputs[i.id] || ''}
+                                  onChange={(e) => setRoleInputs({...roleInputs, [i.id]: e.target.value})}
+                                  className="bg-stone-950 border border-stone-850 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-amber-500"
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <input 
+                                  type="datetime-local"
+                                  value={dateInputs[i.id] || ''}
+                                  onChange={(e) => setDateInputs({...dateInputs, [i.id]: e.target.value})}
+                                  className="bg-stone-950 border border-stone-850 rounded px-2 py-1 text-[11px] text-stone-300 focus:outline-none focus:border-amber-500"
+                                />
+                                <input 
+                                  type="text"
+                                  placeholder="Meeting Link"
+                                  value={meetingInputs[i.id] || ''}
+                                  onChange={(e) => setMeetingInputs({...meetingInputs, [i.id]: e.target.value})}
+                                  className="bg-stone-950 border border-stone-850 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-amber-500"
+                                />
+                              </div>
+                              <div>
+                                <textarea 
+                                  placeholder="Additional Notes"
+                                  value={notesInputs[i.id] || ''}
+                                  onChange={(e) => setNotesInputs({...notesInputs, [i.id]: e.target.value})}
+                                  rows={2}
+                                  className="w-full bg-stone-950 border border-stone-850 rounded px-2 py-1.5 text-[11px] text-white focus:outline-none focus:border-amber-500 resize-none"
+                                />
+                              </div>
+                            </td>
+                            <td className="py-4 text-right">
+                              <button 
+                                onClick={() => handleCreateOrUpdateInterview(i.id)}
+                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-lg text-[10px] font-black"
+                              >
+                                Save Details
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: REGISTERED USERS DIRECTORY */}
+          {activeTab === 'candidates' && (
+            <div className="bg-stone-900/20 border border-stone-900 rounded-2xl sm:rounded-3xl overflow-hidden p-4 sm:p-6 space-y-6">
+              
+              {/* TOP SUMMARY STATS BAR */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-stone-950/50 border border-stone-900 rounded-2xl p-4 flex flex-col justify-center">
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">Total Registered Candidates</p>
+                  <p className="text-2xl sm:text-3xl font-black text-white mt-1">{profiles.length}</p>
+                </div>
+                <div className="bg-emerald-950/10 border border-emerald-900/20 rounded-2xl p-4 flex flex-col justify-center">
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-500">Verified & Paid Candidates</p>
+                  <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">{paidCandidates.length}</p>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-white mb-4">Verified Paid Candidates Directory</h2>
+                
+                {paidCandidates.length === 0 ? (
+                  <div className="text-center py-12 text-xs text-stone-500 font-medium">
+                    No paid candidates exist on the platform yet.
+                  </div>
+                ) : (
+                  <>
+                    {/* MOBILE CANDIDATE CARDS */}
+                    <div className="block md:hidden space-y-3">
+                      {paidCandidates.map((p) => (
+                        <div key={p.id} className="bg-stone-950/60 border border-stone-850 rounded-xl p-4 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <p className="font-bold text-white text-sm">{p.full_name || 'N/A'}</p>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-black bg-green-500/10 text-green-400 border border-green-500/20">
+                              {p.payment_status || 'unpaid'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-400">{p.email || 'N/A'}</p>
+                          <p className="text-[10px] text-stone-500">{p.phone_number || 'N/A'}</p>
+                          <div className="pt-2 flex flex-wrap gap-1 border-t border-stone-900">
+                            {p.interests && p.interests.length > 0 ? (
+                              p.interests.map((int, idx) => (
+                                <span key={idx} className="bg-stone-900 border border-stone-800 text-stone-400 px-2 py-0.5 rounded text-[9px]">
+                                  {int}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-stone-600 italic text-[10px]">No interests specified</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* DESKTOP CANDIDATE TABLE */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-stone-850 text-stone-500 font-bold uppercase tracking-wider">
+                            <th className="pb-3">Full Name</th>
+                            <th className="pb-3">Email</th>
+                            <th className="pb-3">Phone</th>
+                            <th className="pb-3">Payment State</th>
+                            <th className="pb-3">Interests Specified</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-900/60 font-medium text-stone-300">
+                          {paidCandidates.map((p) => (
+                            <tr key={p.id} className="hover:bg-stone-950/20">
+                              <td className="py-4 font-bold text-white">{p.full_name || 'N/A'}</td>
+                              <td className="py-4 text-stone-400">{p.email || 'N/A'}</td>
+                              <td className="py-4 text-stone-400">{p.phone_number || 'N/A'}</td>
+                              <td className="py-4">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-green-500/10 text-green-400 border border-green-500/20">
+                                  {p.payment_status || 'unpaid'}
+                                </span>
+                              </td>
+                              <td className="py-4">
+                                <div className="flex flex-wrap gap-1">
+                                  {p.interests && p.interests.length > 0 ? (
+                                    p.interests.map((int, idx) => (
+                                      <span key={idx} className="bg-stone-900 border border-stone-800 text-stone-400 px-2 py-0.5 rounded text-[9px]">
+                                        {int}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-stone-600 italic text-[10px]">None</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -579,16 +809,16 @@ export default function AdminDashboard() {
 
       {/* --- RECEIPT PREVIEW LIGHTBOX --- */}
       {selectedReceiptUrl && (
-        <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center p-6 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center p-4 sm:p-6 z-50 animate-fade-in">
           <div className="max-w-2xl w-full flex justify-end mb-2">
             <button 
               onClick={() => setSelectedReceiptUrl(null)}
-              className="text-white hover:text-amber-500 text-sm font-black uppercase tracking-wider"
+              className="text-white hover:text-amber-500 text-xs sm:text-sm font-black uppercase tracking-wider"
             >
               [ Close Lightbox ]
             </button>
           </div>
-          <div className="max-w-2xl w-full bg-stone-900 border border-stone-850 rounded-2xl p-4 overflow-hidden shadow-2xl flex justify-center">
+          <div className="max-w-2xl w-full bg-stone-900 border border-stone-850 rounded-2xl p-2 sm:p-4 overflow-hidden shadow-2xl flex justify-center">
             <img 
               src={selectedReceiptUrl} 
               alt="Payment verification proof" 

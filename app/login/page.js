@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
@@ -21,6 +21,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
   const [successMsg, setSuccessMsg] = useState(null)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  // Ref to target the exact form container where user details are entered
+  const formSectionRef = useRef(null)
+
+  // Automatically scroll down to the login form box on page load for both mobile and PC
+  useEffect(() => {
+    if (formSectionRef.current) {
+      formSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [])
+
+  const handleNavigation = (path) => {
+    setIsMobileMenuOpen(false)
+    router.push(path)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -94,77 +110,156 @@ export default function LoginPage() {
       </div>
 
       {/* NAVIGATION HEADER */}
-      <header className="relative max-w-7xl mx-auto w-full px-6 py-6 flex flex-col lg:flex-row items-center justify-between gap-6 border-b border-stone-900/60 z-10 backdrop-blur-md">
-        {/* Left Side Brand */}
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => router.push('/')}>
-          <div className="h-11 w-11 bg-black rounded-full flex items-center justify-center border border-stone-800 shadow-lg overflow-hidden shrink-0 relative">
-            <span className="text-[11px] font-bold text-white tracking-tighter lowercase font-sans absolute">project</span>
+      <header className="relative max-w-7xl mx-auto w-full px-6 py-6 border-b border-stone-900/60 z-20 backdrop-blur-md">
+        <div className="flex items-center justify-between gap-6">
+          {/* Left Side Brand */}
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => handleNavigation('/')}>
+            <div className="h-11 w-11 bg-black rounded-full flex items-center justify-center border border-stone-800 shadow-lg overflow-hidden shrink-0 relative">
+              <span className="text-[11px] font-bold text-white tracking-tighter lowercase font-sans absolute">project</span>
+            </div>
+            <span className="text-xl font-extrabold bg-gradient-to-r from-white via-stone-200 to-stone-400 bg-clip-text text-transparent tracking-tight">
+              Project Find
+            </span>
           </div>
-          <span className="text-xl font-extrabold bg-gradient-to-r from-white via-stone-200 to-stone-400 bg-clip-text text-transparent tracking-tight">
-            Project Find
-          </span>
+
+          {/* Center Navigation Tabs (Hidden on mobile, visible on desktop/PC) */}
+          <nav className="hidden lg:flex items-center justify-center gap-x-6 gap-y-2 text-sm font-bold text-stone-300">
+            <button 
+              onClick={() => handleNavigation('/')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              Home
+            </button>
+            <button 
+              onClick={() => handleNavigation('/#how-it-works')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              How It Works
+            </button>
+            <button 
+              onClick={() => handleNavigation('/faq')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              FAQ
+            </button>
+            <button 
+              onClick={() => handleNavigation('/about')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              About Us
+            </button>
+            <button 
+              onClick={() => handleNavigation('/privacy')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              Privacy Policy
+            </button>
+            <button 
+              onClick={() => handleNavigation('/contact')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              Contact Us
+            </button>
+          </nav>
+
+          {/* Right Side Actions / Mobile Toggle */}
+          <div className="flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3">
+              <button 
+                onClick={() => handleNavigation('/login')}
+                className="px-5 py-2.5 bg-stone-900/90 text-amber-400 text-sm font-semibold rounded-xl border border-amber-500/20 backdrop-blur transition shadow-md"
+              >
+                Log In
+              </button>
+              <button 
+                onClick={() => handleNavigation('/register')}
+                className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md"
+              >
+                Sign Up
+              </button>
+            </div>
+
+            {/* Mobile Hamburger Toggle Button (Affects mobile only) */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-stone-200 hover:text-white focus:outline-none"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Center Navigation Tabs (Updated with all navigation items) */}
-        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-bold text-stone-300">
-          <button 
-            onClick={() => router.push('/')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            Home
-          </button>
-          <button 
-            onClick={() => router.push('/#how-it-works')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            How It Works
-          </button>
-          <button 
-            onClick={() => router.push('/faq')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            FAQ
-          </button>
-          <button 
-            onClick={() => router.push('/about')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            About Us
-          </button>
-          <button 
-            onClick={() => router.push('/privacy')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            Privacy Policy
-          </button>
-          <button 
-            onClick={() => router.push('/contact')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            Contact Us
-          </button>
-        </nav>
+        {/* Mobile Dropdown Menu Drawer */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden mt-4 pt-4 border-t border-stone-800/80 flex flex-col space-y-3 bg-stone-950/95 p-4 rounded-2xl border backdrop-blur-lg">
+            <button 
+              onClick={() => handleNavigation('/')} 
+              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
+            >
+              Home
+            </button>
+            <button 
+              onClick={() => handleNavigation('/#how-it-works')} 
+              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
+            >
+              How It Works
+            </button>
+            <button 
+              onClick={() => handleNavigation('/faq')} 
+              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
+            >
+              FAQ
+            </button>
+            <button 
+              onClick={() => handleNavigation('/about')} 
+              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
+            >
+              About Us
+            </button>
+            <button 
+              onClick={() => handleNavigation('/privacy')} 
+              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
+            >
+              Privacy Policy
+            </button>
+            <button 
+              onClick={() => handleNavigation('/contact')} 
+              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
+            >
+              Contact Us
+            </button>
 
-        {/* Right Side Actions */}
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => router.push('/login')}
-            className="px-5 py-2.5 bg-stone-900/90 text-amber-400 text-sm font-semibold rounded-xl border border-amber-500/20 backdrop-blur transition shadow-md"
-          >
-            Log In
-          </button>
-          <button 
-            onClick={() => router.push('/register')}
-            className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md"
-          >
-            Sign Up
-          </button>
-        </div>
+            {/* Mobile Action Buttons inside Drawer */}
+            <div className="pt-3 border-t border-stone-800/60 grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => handleNavigation('/login')}
+                className="w-full py-2.5 bg-stone-900 text-amber-400 text-sm font-semibold rounded-xl border border-amber-500/20 text-center"
+              >
+                Log In
+              </button>
+              <button 
+                onClick={() => handleNavigation('/register')}
+                className="w-full py-2.5 bg-stone-900 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 text-center"
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* LOGIN MAIN CONTENT */}
       <main className="relative flex-grow flex items-center justify-center z-10 py-12 px-6">
-        <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <div ref={formSectionRef} className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
           {/* Left Column: Picture Cover & Pitch Panel (5 Cols) */}
           <div className="lg:col-span-5 rounded-3xl overflow-hidden border border-stone-900/85 shadow-2xl relative min-h-[350px] lg:min-h-auto flex flex-col justify-end p-8 group">

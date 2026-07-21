@@ -21,6 +21,7 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [isMenuOpen, setIsMenuOpen] = useState(false) // State for mobile hamburger menu
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -66,72 +67,154 @@ export default function ContactPage() {
       </div>
 
       {/* NAVIGATION HEADER */}
-      <header className="relative max-w-7xl mx-auto px-6 py-6 flex flex-col lg:flex-row items-center justify-between gap-6 border-b border-stone-900/60 z-10 backdrop-blur-md">
-        {/* Left Side Brand */}
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => router.push('/')}>
-          <div className="h-11 w-11 bg-black rounded-full flex items-center justify-center border border-stone-800 shadow-lg overflow-hidden shrink-0 relative">
-            <span className="text-[11px] font-bold text-white tracking-tighter lowercase font-sans absolute">project</span>
+      <header className="relative max-w-7xl mx-auto px-6 py-6 border-b border-stone-900/60 z-10 backdrop-blur-md">
+        <div className="flex items-center justify-between gap-6">
+          {/* Left Side Brand */}
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => router.push('/')}>
+            <div className="h-11 w-11 bg-black rounded-full flex items-center justify-center border border-stone-800 shadow-lg overflow-hidden shrink-0 relative">
+              <span className="text-[11px] font-bold text-white tracking-tighter lowercase font-sans absolute">project</span>
+            </div>
+            <span className="text-xl font-extrabold bg-gradient-to-r from-white via-stone-200 to-stone-400 bg-clip-text text-transparent tracking-tight">
+              Project Find
+            </span>
           </div>
-          <span className="text-xl font-extrabold bg-gradient-to-r from-white via-stone-200 to-stone-400 bg-clip-text text-transparent tracking-tight">
-            Project Find
-          </span>
+
+          {/* Desktop Navigation Tabs (Hidden on mobile) */}
+          <nav className="hidden lg:flex items-center justify-center gap-x-6 gap-y-2 text-sm font-bold text-stone-300">
+            <button 
+              onClick={() => router.push('/')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              Home
+            </button>
+            <button 
+              onClick={() => router.push('/#how-it-works')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              How It Works
+            </button>
+            <button 
+              onClick={() => router.push('/faq')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              FAQ
+            </button>
+            <button 
+              onClick={() => router.push('/about')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              About Us
+            </button>
+            <button 
+              onClick={() => router.push('/privacy')} 
+              className="hover:text-amber-400 transition-colors duration-200"
+            >
+              Privacy Policy
+            </button>
+            <button 
+              onClick={() => router.push('/contact')} 
+              className="text-amber-400 transition-colors duration-200 border-b-2 border-amber-400/30 pb-0.5"
+            >
+              Contact Us
+            </button>
+          </nav>
+
+          {/* Desktop Actions (Hidden on mobile) */}
+          <div className="hidden lg:flex items-center gap-3">
+            <button 
+              onClick={() => router.push('/login')}
+              className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md"
+            >
+              Log In
+            </button>
+            <button 
+              onClick={() => router.push('/register')}
+              className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md"
+            >
+              Sign Up
+            </button>
+          </div>
+
+          {/* Mobile Hamburger Button (Visible on mobile only) */}
+          <div className="flex lg:hidden items-center">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2.5 rounded-xl bg-stone-900/80 border border-stone-800 text-stone-200 hover:text-white focus:outline-none"
+              aria-label="Toggle navigation menu"
+            >
+              {isMenuOpen ? (
+                /* Close Icon (X) */
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                /* Hamburger Icon */
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Center Navigation Tabs */}
-        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-bold text-stone-300">
-          <button 
-            onClick={() => router.push('/')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            Home
-          </button>
-          <button 
-            onClick={() => router.push('/#how-it-works')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            How It Works
-          </button>
-          <button 
-            onClick={() => router.push('/faq')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            FAQ
-          </button>
-          <button 
-            onClick={() => router.push('/about')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            About Us
-          </button>
-          <button 
-            onClick={() => router.push('/privacy')} 
-            className="hover:text-amber-400 transition-colors duration-200"
-          >
-            Privacy Policy
-          </button>
-          <button 
-            onClick={() => router.push('/contact')} 
-            className="text-amber-400 transition-colors duration-200 border-b-2 border-amber-400/30 pb-0.5"
-          >
-            Contact Us
-          </button>
-        </nav>
+        {/* Mobile Dropdown Menu */}
+        {isMenuOpen && (
+          <div className="lg:hidden mt-4 pt-4 border-t border-stone-900 flex flex-col space-y-4">
+            <nav className="flex flex-col space-y-3 text-sm font-bold text-stone-300">
+              <button 
+                onClick={() => { router.push('/'); setIsMenuOpen(false); }} 
+                className="text-left py-1 hover:text-amber-400 transition-colors duration-200"
+              >
+                Home
+              </button>
+              <button 
+                onClick={() => { router.push('/#how-it-works'); setIsMenuOpen(false); }} 
+                className="text-left py-1 hover:text-amber-400 transition-colors duration-200"
+              >
+                How It Works
+              </button>
+              <button 
+                onClick={() => { router.push('/faq'); setIsMenuOpen(false); }} 
+                className="text-left py-1 hover:text-amber-400 transition-colors duration-200"
+              >
+                FAQ
+              </button>
+              <button 
+                onClick={() => { router.push('/about'); setIsMenuOpen(false); }} 
+                className="text-left py-1 hover:text-amber-400 transition-colors duration-200"
+              >
+                About Us
+              </button>
+              <button 
+                onClick={() => { router.push('/privacy'); setIsMenuOpen(false); }} 
+                className="text-left py-1 hover:text-amber-400 transition-colors duration-200"
+              >
+                Privacy Policy
+              </button>
+              <button 
+                onClick={() => { router.push('/contact'); setIsMenuOpen(false); }} 
+                className="text-left py-1 text-amber-400 transition-colors duration-200"
+              >
+                Contact Us
+              </button>
+            </nav>
 
-        {/* Right Side Actions */}
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => router.push('/login')}
-            className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md"
-          >
-            Log In
-          </button>
-          <button 
-            onClick={() => router.push('/register')}
-            className="px-5 py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md"
-          >
-            Sign Up
-          </button>
-        </div>
+            <div className="pt-2 flex flex-col gap-2.5 border-t border-stone-900/80">
+              <button 
+                onClick={() => { router.push('/login'); setIsMenuOpen(false); }}
+                className="w-full py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md text-center"
+              >
+                Log In
+              </button>
+              <button 
+                onClick={() => { router.push('/register'); setIsMenuOpen(false); }}
+                className="w-full py-2.5 bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 backdrop-blur transition shadow-md text-center"
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* CONTACT US CONTENT */}

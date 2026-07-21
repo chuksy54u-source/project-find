@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
@@ -25,6 +25,7 @@ export default function CrmDashboard() {
   const [replyText, setReplyText] = useState('')
   const [submittingReply, setSubmittingReply] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const chatEndRef = useRef(null)
 
   // Fetch all support pipeline tickets safely
   const fetchMessages = async () => {
@@ -103,7 +104,7 @@ export default function CrmDashboard() {
         .single()
 
       if (!profile || !profile.is_crm) {
-        router.push('/dashboard') 
+        router.push('/dashboard')
       }
     }
 
@@ -123,17 +124,17 @@ export default function CrmDashboard() {
 
   // Filter pipeline messages based on tab view, category, and matching search queries
   const filteredMessages = processedMessages.filter(msg => {
-    const matchesStatus = 
+    const matchesStatus =
       filter === 'all' ? true :
       filter === 'unreplied' ? msg.reply_status === 'unreplied' :
       msg.reply_status === 'replied'
 
-    const matchesType = 
+    const matchesType =
       activeTab === 'all-types' ? true :
       activeTab === 'GM' ? msg.type === 'GM' :
       msg.type === 'CM'
 
-    const matchesSearch = 
+    const matchesSearch =
       msg.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       msg.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       msg.message?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -142,6 +143,28 @@ export default function CrmDashboard() {
 
     return matchesStatus && matchesType && matchesSearch
   })
+
+  // Gather full chat thread history if selected message is CM
+  const customerThread = selectedMessage && selectedMessage.type === 'CM' && selectedMessage.profile_id
+    ? messages
+        .filter(m => m.profile_id === selectedMessage.profile_id)
+        .map(msg => {
+          const typeUpper = (msg.message_type || 'gm').toUpperCase()
+          return {
+            ...msg,
+            ticketId: `${typeUpper}-${msg.id.slice(0, 5).toUpperCase()}`,
+            type: typeUpper
+          }
+        })
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    : []
+
+  // Auto scroll chat to bottom when thread updates
+  useEffect(() => {
+    if (selectedMessage?.type === 'CM') {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [customerThread, selectedMessage])
 
   // Submit response updates
   const handleSendReply = async (e) => {
@@ -167,16 +190,15 @@ export default function CrmDashboard() {
       if (error) throw error
 
       // Refresh local state list
-      setMessages(prev => 
-        prev.map(m => m.id === selectedMessage.id 
-          ? { ...m, ...updateData } 
+      setMessages(prev =>
+        prev.map(m => m.id === selectedMessage.id
+          ? { ...m, ...updateData }
           : m
         )
       )
       
       setSelectedMessage(prev => ({ ...prev, ...updateData }))
       setReplyText('')
-      alert('Reply processed and saved successfully.')
     } catch (err) {
       alert(`Error updating ticket: ${err.message}`)
     } finally {
@@ -213,7 +235,7 @@ export default function CrmDashboard() {
           <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
             Customer Support Workspace
           </span>
-          <button 
+          <button
             onClick={handleSignOut}
             className="px-4 py-2 bg-stone-900/90 hover:bg-stone-850 text-stone-300 text-xs font-semibold rounded-xl border border-stone-850 transition"
           >
@@ -261,8 +283,8 @@ export default function CrmDashboard() {
                     key={statusOption}
                     onClick={() => setFilter(statusOption)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold border capitalize transition-all ${
-                      filter === statusOption 
-                        ? 'bg-stone-800 text-amber-400 border-amber-500/30' 
+                      filter === statusOption
+                        ? 'bg-stone-800 text-amber-400 border-amber-500/30'
                         : 'border-stone-900 text-stone-400 hover:text-stone-200'
                     }`}
                   >
@@ -274,7 +296,7 @@ export default function CrmDashboard() {
             </div>
 
             {/* Search input */}
-            <input 
+            <input
               type="text"
               placeholder="Search by sender name, email, query, or ticket ID..."
               value={searchQuery}
@@ -295,15 +317,15 @@ export default function CrmDashboard() {
               </div>
             ) : (
               filteredMessages.map((msg) => (
-                <div 
+                <div
                   key={msg.id}
                   onClick={() => {
                     setSelectedMessage(msg)
                     setReplyText(msg.reply_message || '')
                   }}
                   className={`p-5 rounded-2xl border transition-all cursor-pointer text-left ${
-                    selectedMessage?.id === msg.id 
-                      ? 'bg-amber-500/5 border-amber-500/40 shadow-lg' 
+                    selectedMessage?.id === msg.id
+                      ? 'bg-amber-500/5 border-amber-500/40 shadow-lg'
                       : 'bg-stone-900/30 border-stone-900/80 hover:bg-stone-900/50'
                   }`}
                 >
@@ -316,14 +338,14 @@ export default function CrmDashboard() {
                         {msg.profiles?.email || msg.email || 'No email provided'}
                       </span>
                     </div>
-                    
+                   
                     <div className="flex flex-col items-end gap-1.5">
                       <span className="text-[10px] font-mono tracking-wider font-bold bg-stone-950 border border-stone-850 px-2 py-0.5 rounded text-stone-300">
                         {msg.ticketId}
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        msg.reply_status === 'replied' 
-                          ? 'bg-green-500/10 text-green-400 border-green-500/20' 
+                        msg.reply_status === 'replied'
+                          ? 'bg-green-500/10 text-green-400 border-green-500/20'
                           : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                       }`}>
                         {msg.reply_status}
@@ -342,87 +364,172 @@ export default function CrmDashboard() {
 
         {/* Right Hand Interaction / Reply Panel (5 Columns) */}
         <div className="lg:col-span-5">
-          <div className="bg-stone-900/30 border border-stone-900/80 rounded-3xl p-6 lg:p-8 flex flex-col justify-between h-full sticky top-8 min-h-[450px]">
+          <div className="bg-stone-900/30 border border-stone-900/80 rounded-3xl p-6 lg:p-8 flex flex-col justify-between h-full sticky top-8 min-h-[550px]">
             {selectedMessage ? (
               <div className="flex flex-col h-full justify-between space-y-6">
-                <div>
-                  <div className="flex items-center justify-between border-b border-stone-900 pb-4 mb-4">
-                    <div>
-                      <span className="text-xs font-mono font-bold text-amber-500">{selectedMessage.ticketId}</span>
-                      <h3 className="text-lg font-black text-white mt-1">
-                        {selectedMessage.profiles?.full_name || selectedMessage.name || 'Anonymous User'}
-                      </h3>
-                      <p className="text-xs text-stone-400 font-medium">
-                        {selectedMessage.profiles?.email || selectedMessage.email}
-                      </p>
+                
+                {/* --- CHAT FORMAT FOR CM MESSAGES --- */}
+                {selectedMessage.type === 'CM' ? (
+                  <div className="flex flex-col h-[460px] justify-between space-y-4">
+                    {/* Header info */}
+                    <div className="border-b border-stone-900 pb-3 flex items-center justify-between shrink-0">
+                      <div>
+                        <span className="text-xs font-mono font-bold text-amber-500">{selectedMessage.ticketId}</span>
+                        <h3 className="text-base font-black text-white mt-0.5">
+                          {selectedMessage.profiles?.full_name || selectedMessage.name || 'Anonymous User'}
+                        </h3>
+                        <p className="text-[11px] text-stone-400 font-medium">
+                          {selectedMessage.profiles?.email || selectedMessage.email}
+                        </p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        Live Chat Thread
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Profile Card if linked to CM */}
-                  {selectedMessage.type === 'CM' && selectedMessage.profiles && (
-                    <div className="mb-4 p-4 bg-stone-950/80 border border-stone-900 rounded-2xl space-y-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 block">Linked Profile Detail</span>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-stone-400 block text-[10px]">Phone</span>
-                          <span className="text-stone-200 font-semibold">{selectedMessage.profiles.phone_number || 'N/A'}</span>
+                    {/* Chat Messages Scroll Area */}
+                    <div className="flex-grow overflow-y-auto space-y-4 pr-2 custom-scrollbar bg-stone-950/40 p-3 rounded-2xl border border-stone-900/80">
+                      {customerThread.length === 0 ? (
+                        <div className="text-center py-12 text-stone-500 text-xs">No chat history available.</div>
+                      ) : (
+                        customerThread.map((msgItem) => {
+                          const isCurrentSelected = msgItem.id === selectedMessage.id;
+                          return (
+                            <div key={msgItem.id} className="space-y-3">
+                              {/* Customer Message Bubble */}
+                              <div className="flex flex-col items-start w-full">
+                                <div 
+                                  onClick={() => {
+                                    setSelectedMessage(msgItem)
+                                    setReplyText(msgItem.reply_message || '')
+                                  }}
+                                  className={`px-4 py-3 max-w-[90%] text-xs shadow-sm leading-relaxed rounded-2xl rounded-tl-sm cursor-pointer border transition ${
+                                    isCurrentSelected 
+                                      ? 'bg-stone-850 text-stone-100 border-amber-500/40 ring-1 ring-amber-500/30' 
+                                      : 'bg-stone-900 text-stone-200 border-stone-800 hover:bg-stone-850'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-4 mb-1">
+                                    <span className="text-[9px] font-mono font-bold text-amber-400">{msgItem.ticketId}</span>
+                                    <span className="text-[9px] text-stone-400">
+                                      {new Date(msgItem.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                  {msgItem.message}
+                                </div>
+                              </div>
+
+                              {/* Support Reply Bubble (if replied) */}
+                              {msgItem.reply_status === 'replied' && msgItem.reply_message && (
+                                <div className="flex flex-col items-end w-full">
+                                  <div className="px-4 py-3 max-w-[90%] text-xs shadow-sm leading-relaxed bg-amber-500 text-stone-950 rounded-2xl rounded-tr-sm font-medium">
+                                    <div className="flex items-center justify-between gap-4 mb-1 opacity-75">
+                                      <span className="text-[9px] font-mono font-bold uppercase">Support Response</span>
+                                      <span className="text-[9px]">Answered</span>
+                                    </div>
+                                    {msgItem.reply_message}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+
+                    {/* Chat Reply Form */}
+                    <form onSubmit={handleSendReply} className="space-y-3 pt-2 shrink-0">
+                      <div className="relative">
+                        <textarea
+                          required
+                          rows={2}
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          disabled={selectedMessage.reply_status === 'replied'}
+                          placeholder="Type response for this customer ticket..."
+                          className="w-full bg-stone-950 border border-stone-900 rounded-xl px-4 py-3 text-stone-100 text-xs focus:outline-none focus:border-amber-500 transition font-medium disabled:opacity-50 resize-none"
+                        />
+                      </div>
+
+                      {selectedMessage.reply_status === 'replied' ? (
+                        <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold p-2.5 rounded-xl text-center">
+                          This inquiry has already been resolved and replied.
                         </div>
+                      ) : (
+                        <button
+                          type="submit"
+                          disabled={submittingReply}
+                          className="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:from-stone-900 disabled:text-stone-500 text-stone-950 font-black rounded-xl text-xs transition active:scale-95 text-center shadow-lg"
+                        >
+                          {submittingReply ? 'Sending Response...' : 'Send Chat Reply'}
+                        </button>
+                      )}
+                    </form>
+                  </div>
+                ) : (
+                  /* --- STANDARD TICKET FORMAT FOR GM MESSAGES --- */
+                  <div className="flex flex-col h-full justify-between space-y-6">
+                    <div>
+                      <div className="flex items-center justify-between border-b border-stone-900 pb-4 mb-4">
                         <div>
-                          <span className="text-stone-400 block text-[10px]">Primary Sector</span>
-                          <span className="text-stone-200 font-semibold truncate block">
-                            {selectedMessage.profiles.interests && selectedMessage.profiles.interests[0] ? selectedMessage.profiles.interests[0] : 'N/A'}
-                          </span>
+                          <span className="text-xs font-mono font-bold text-amber-500">{selectedMessage.ticketId}</span>
+                          <h3 className="text-lg font-black text-white mt-1">
+                            {selectedMessage.profiles?.full_name || selectedMessage.name || 'Anonymous User'}
+                          </h3>
+                          <p className="text-xs text-stone-400 font-medium">
+                            {selectedMessage.profiles?.email || selectedMessage.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Inquiry Description</span>
+                          <div className="bg-stone-950/60 border border-stone-900 rounded-xl p-4 text-xs text-stone-200 leading-relaxed max-h-[150px] overflow-y-auto">
+                            {selectedMessage.message}
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-stone-950/40 border border-stone-900 rounded-xl text-stone-400 text-[11px] leading-relaxed">
+                          This is a General Message (GM). Sending a reply updates the status to Replied, but does not route a response payload back to a user profile account.
                         </div>
                       </div>
                     </div>
-                  )}
 
-                  <div className="space-y-4">
-                    <div>
-                      <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Inquiry Description</span>
-                      <div className="bg-stone-950/60 border border-stone-900 rounded-xl p-4 text-xs text-stone-200 leading-relaxed max-h-[150px] overflow-y-auto">
-                        {selectedMessage.message}
+                    <form onSubmit={handleSendReply} className="space-y-4 pt-4 border-t border-stone-900">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-300 mb-1.5">
+                          Notes / Status Summary
+                        </label>
+                        <textarea
+                          required
+                          rows={4}
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          disabled={selectedMessage.reply_status === 'replied'}
+                          placeholder="Update status notes regarding general query action items..."
+                          className="w-full bg-stone-950 border border-stone-900 rounded-xl px-4 py-3 text-stone-100 text-xs focus:outline-none focus:border-amber-500 transition font-medium disabled:opacity-50"
+                        />
                       </div>
-                    </div>
 
-                    {selectedMessage.type === 'GM' && (
-                      <div className="p-3 bg-stone-950/40 border border-stone-900 rounded-xl text-stone-400 text-[11px] leading-relaxed">
-                        This is a General Message (GM). Sending a reply updates the status to Replied, but does not route a response payload back to a user profile account.
-                      </div>
-                    )}
+                      {selectedMessage.reply_status === 'replied' ? (
+                        <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold p-3 rounded-xl text-center">
+                          This inquiry has already been resolved and replied.
+                        </div>
+                      ) : (
+                        <button
+                          type="submit"
+                          disabled={submittingReply}
+                          className="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:from-stone-900 disabled:text-stone-500 text-stone-950 font-black rounded-xl text-xs transition active:scale-95 text-center shadow-lg"
+                        >
+                          {submittingReply ? 'Sending Response...' : 'Submit Resolution'}
+                        </button>
+                      )}
+                    </form>
                   </div>
-                </div>
+                )}
 
-                <form onSubmit={handleSendReply} className="space-y-4 pt-4 border-t border-stone-900">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-300 mb-1.5">
-                      {selectedMessage.type === 'CM' ? 'Reply Message' : 'Notes / Status Summary'}
-                    </label>
-                    <textarea
-                      required
-                      rows={4}
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      disabled={selectedMessage.reply_status === 'replied'}
-                      placeholder={selectedMessage.type === 'CM' ? "Type the response that will be displayed on the customer's dashboard..." : "Update status notes regarding general query action items..."}
-                      className="w-full bg-stone-950 border border-stone-900 rounded-xl px-4 py-3 text-stone-100 text-xs focus:outline-none focus:border-amber-500 transition font-medium disabled:opacity-50"
-                    />
-                  </div>
-
-                  {selectedMessage.reply_status === 'replied' ? (
-                    <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold p-3 rounded-xl text-center">
-                      This inquiry has already been resolved and replied.
-                    </div>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={submittingReply}
-                      className="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:from-stone-900 disabled:text-stone-500 text-stone-950 font-black rounded-xl text-xs transition active:scale-95 text-center shadow-lg"
-                    >
-                      {submittingReply ? 'Sending Response...' : 'Submit Resolution'}
-                    </button>
-                  )}
-                </form>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center text-center my-auto space-y-3">
