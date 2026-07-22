@@ -34,8 +34,8 @@ export default function AdminDashboard() {
   const [adminUser, setAdminUser] = useState(null)
   
   // Dashboard Metrics
-  const [profiles, setProfiles] = useState([]) // Stores all non-admin profiles
-  const [paidCandidates, setPaidCandidates] = useState([]) // Stores verified paid candidates
+  const [profiles, setProfiles] = useState([]) // Stores all non-admin profiles for this staff_code
+  const [paidCandidates, setPaidCandidates] = useState([]) // Stores verified paid candidates for this staff_code
   const [pendingPayments, setPendingPayments] = useState([])
   const [interviews, setInterviews] = useState([])
 
@@ -72,36 +72,49 @@ export default function AdminDashboard() {
       }
 
       setAdminUser(profile)
-      fetchDashboardData()
+      fetchDashboardData(profile.staff_code)
     }
 
     verifyAdminSession()
   }, [router])
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (staffCode) => {
     setLoading(true)
     try {
-      // 1. Fetch pending payments with user profile details
+      if (!staffCode) {
+        console.warn("No staff_code assigned to this admin account.")
+        setPendingPayments([])
+        setInterviews([])
+        setProfiles([])
+        setPaidCandidates([])
+        setLoading(false)
+        return
+      }
+
+      // 1. Fetch pending payments filtered by user's staff_code
       const { data: paymentsData, error: paymentsErr } = await supabase
         .from('payments')
-        .select(`*, profiles(full_name, email, phone_number)`)
+        .select(`*, profiles!inner(full_name, email, phone_number, staff_code)`)
         .eq('status', 'pending')
+        .eq('profiles.staff_code', staffCode)
         .order('created_at', { ascending: false })
 
       if (paymentsErr) console.error("Error fetching payments:", paymentsErr)
 
-      // 2. Fetch interviews (Joins complete profile metadata)
+      // 2. Fetch interviews filtered by user's staff_code
       const { data: interviewsData, error: interviewsErr } = await supabase
         .from('interviews')
-        .select(`*, profiles(full_name, email, phone_number, payment_status, interests)`)
+        .select(`*, profiles!inner(full_name, email, phone_number, payment_status, interests, staff_code)`)
+        .eq('profiles.staff_code', staffCode)
         .order('created_at', { ascending: false })
 
       if (interviewsErr) console.error("Error fetching interviews:", interviewsErr)
 
-      // 3. Fetch candidate profiles
+      // 3. Fetch candidate profiles filtered by staff_code
       const { data: profilesData, error: profilesErr } = await supabase
         .from('profiles')
         .select('*')
+        .eq('staff_code', staffCode)
         .order('updated_at', { ascending: false })
 
       if (profilesErr) {
@@ -168,7 +181,7 @@ export default function AdminDashboard() {
       }
 
       alert(`Payment successfully marked as ${newStatus}.`)
-      fetchDashboardData()
+      fetchDashboardData(adminUser?.staff_code)
     } catch (err) {
       console.error("DATABASE ERROR:", err)
       alert(`Database mutation failed.\nReason: ${err?.message || "Check schema logs."}`)
@@ -198,7 +211,7 @@ export default function AdminDashboard() {
 
       if (error) throw error
       alert("Interview successfully updated.")
-      fetchDashboardData()
+      fetchDashboardData(adminUser?.staff_code)
     } catch (err) {
       console.error(err)
       alert("Failed to update schedule updates.")
@@ -207,33 +220,44 @@ export default function AdminDashboard() {
 
   // --- 3. RESET RECRUITMENT CYCLE ---
   const handleGlobalReset = async () => {
-    const confirmation = window.confirm("⚠️ WARNING: This will purge current scheduled interviews, payments and reset workspace user profiles. Proceed?")
+    if (!adminUser?.staff_code) return
+
+    const confirmation = window.confirm(`⚠️ WARNING: This will purge current scheduled interviews, payments, and reset candidate profiles assigned to staff code (${adminUser.staff_code}). Proceed?`)
     if (!confirmation) return
 
     try {
-      const { error: interviewErr } = await supabase
-        .from('interviews')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000')
-      
-      if (interviewErr) throw interviewErr
+      // Get target candidate user IDs matching this staff_code
+      const candidateIds = profiles.map(p => p.id)
 
-      const { error: paymentsErr } = await supabase
-        .from('payments')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000')
-      
-      if (paymentsErr) throw paymentsErr
+      if (candidateIds.length > 0) {
+        // Delete interviews for candidate profiles under this staff code
+        const { error: interviewErr } = await supabase
+          .from('interviews')
+          .delete()
+          .in('user_id', candidateIds)
+        
+        if (interviewErr) throw interviewErr
 
-      const { error: profileErr } = await supabase
-        .from('profiles')
-        .update({ payment_status: 'unpaid' })
-        .eq('is_admin', false)
+        // Delete payments for candidate profiles under this staff code
+        const { error: paymentsErr } = await supabase
+          .from('payments')
+          .delete()
+          .in('user_id', candidateIds)
+        
+        if (paymentsErr) throw paymentsErr
 
-      if (profileErr) throw profileErr
+        // Reset payment status on candidate profiles
+        const { error: profileErr } = await supabase
+          .from('profiles')
+          .update({ payment_status: 'unpaid' })
+          .eq('staff_code', adminUser.staff_code)
+          .eq('is_admin', false)
 
-      alert("The system has been completely reset for the upcoming recruitment cycle.")
-      fetchDashboardData()
+        if (profileErr) throw profileErr
+      }
+
+      alert(`The recruitment cycle for code ${adminUser.staff_code} has been completely reset.`)
+      fetchDashboardData(adminUser.staff_code)
     } catch (err) {
       console.error(err)
       alert("Cycle reset operation encountered errors.")
@@ -275,7 +299,9 @@ export default function AdminDashboard() {
           <div>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
-              <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">Project Find Platform Admin</p>
+              <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">
+                Project Find Platform Admin {adminUser?.staff_code ? `• Staff Code: ${adminUser.staff_code}` : ''}
+              </p>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1">Command Control Center</h1>
           </div>
@@ -334,7 +360,6 @@ export default function AdminDashboard() {
                 <span className="text-stone-400 font-normal">Tab:</span>
                 {tabLabels[activeTab]}
               </span>
-              {/* Hamburger / Close Icon */}
               <svg 
                 className="w-5 h-5 text-amber-500 transition-transform duration-200" 
                 fill="none" 
@@ -349,7 +374,6 @@ export default function AdminDashboard() {
               </svg>
             </button>
 
-            {/* Mobile Navigation Dropdown Menu */}
             {mobileMenuOpen && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-stone-900/95 border border-stone-800 rounded-xl overflow-hidden shadow-2xl z-40 backdrop-blur-lg divide-y divide-stone-850">
                 <button
@@ -390,7 +414,7 @@ export default function AdminDashboard() {
               
               {pendingPayments.length === 0 ? (
                 <div className="text-center py-12 text-xs text-stone-500 font-medium">
-                  No manual bank transfer verifications pending right now.
+                  No manual bank transfer verifications pending right now for staff code: {adminUser?.staff_code || 'N/A'}.
                 </div>
               ) : (
                 <>
@@ -504,7 +528,7 @@ export default function AdminDashboard() {
               
               {interviews.length === 0 ? (
                 <div className="text-center py-12 text-xs text-stone-500 font-medium">
-                  Approved payments automatically generate scheduler objects here. No candidates to display.
+                  No interview records assigned to staff code: {adminUser?.staff_code || 'N/A'}.
                 </div>
               ) : (
                 <>
@@ -712,7 +736,7 @@ export default function AdminDashboard() {
               {/* TOP SUMMARY STATS BAR */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-stone-950/50 border border-stone-900 rounded-2xl p-4 flex flex-col justify-center">
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">Total Registered Candidates</p>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">Registered Candidates ({adminUser?.staff_code || 'N/A'})</p>
                   <p className="text-2xl sm:text-3xl font-black text-white mt-1">{profiles.length}</p>
                 </div>
                 <div className="bg-emerald-950/10 border border-emerald-900/20 rounded-2xl p-4 flex flex-col justify-center">
@@ -726,7 +750,7 @@ export default function AdminDashboard() {
                 
                 {paidCandidates.length === 0 ? (
                   <div className="text-center py-12 text-xs text-stone-500 font-medium">
-                    No paid candidates exist on the platform yet.
+                    No paid candidates exist under staff code: {adminUser?.staff_code || 'N/A'}.
                   </div>
                 ) : (
                   <>

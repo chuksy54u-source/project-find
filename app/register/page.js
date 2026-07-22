@@ -23,7 +23,8 @@ export default function RegisterPage() {
     password: '', 
     confirmPassword: '', 
     sector: '', 
-    phone: '' 
+    phone: '',
+    staffCode: ''
   })
   
   // Toggles for showing/hiding raw text in password fields
@@ -38,7 +39,7 @@ export default function RegisterPage() {
   // Ref to target the exact form card box where details are entered
   const formSectionRef = useRef(null)
 
-  // Automatically scroll down to the input form section on page load for both mobile and PC
+  // Automatically scroll down to the input form section on page load
   useEffect(() => {
     if (formSectionRef.current) {
       formSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -64,12 +65,12 @@ export default function RegisterPage() {
     }
 
     try {
-      // 1. Sign up the user in Supabase Auth with custom redirect back to the login page
+      // 1. Sign up user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: 'https://www.project-find.online/login', // Redirects here after email confirmation
+          emailRedirectTo: 'https://www.project-find.online/login',
           data: {
             full_name: formData.name,
             phone_number: formData.phone,
@@ -79,9 +80,8 @@ export default function RegisterPage() {
 
       if (authError) throw authError
 
-      // 2. If the user is successfully created in auth, insert into your public.profiles table
+      // 2. Insert profile record into public.profiles
       if (authData?.user) {
-        // Map the single sector choice into your Postgres _text (array) column: ['Selected Sector']
         const interestsArray = formData.sector ? [formData.sector] : []
 
         const { error: profileError } = await supabase
@@ -92,8 +92,9 @@ export default function RegisterPage() {
               full_name: formData.name,
               email: formData.email,
               phone_number: formData.phone,
-              interests: interestsArray, // Matches your _text schema beautifully!
-              payment_status: 'unpaid'    // Optional field tracking payment status
+              interests: interestsArray,
+              payment_status: 'unpaid',
+              staff_code: formData.staffCode ? formData.staffCode.trim() : null
             }
           ])
 
@@ -102,11 +103,9 @@ export default function RegisterPage() {
 
       setSuccessMsg("Success! Directing you to verify your email address...")
       
-      // Save the email we need before clearing state
       const targetEmail = formData.email
-      setFormData({ name: '', email: '', password: '', confirmPassword: '', sector: '', phone: '' })
+      setFormData({ name: '', email: '', password: '', confirmPassword: '', sector: '', phone: '', staffCode: '' })
       
-      // Redirect to the verify email page after brief delay
       setTimeout(() => {
         router.push(`/verify-email?email=${encodeURIComponent(targetEmail)}`)
       }, 2000)
@@ -140,44 +139,14 @@ export default function RegisterPage() {
             </span>
           </div>
 
-          {/* Center Navigation Tabs (Hidden on mobile, visible on desktop/PC) */}
+          {/* Center Navigation Tabs */}
           <nav className="hidden lg:flex items-center justify-center gap-x-6 gap-y-2 text-sm font-bold text-stone-300">
-            <button 
-              onClick={() => handleNavigation('/')} 
-              className="hover:text-amber-400 transition-colors duration-200"
-            >
-              Home
-            </button>
-            <button 
-              onClick={() => handleNavigation('/#how-it-works')} 
-              className="hover:text-amber-400 transition-colors duration-200"
-            >
-              How It Works
-            </button>
-            <button 
-              onClick={() => handleNavigation('/faq')} 
-              className="hover:text-amber-400 transition-colors duration-200"
-            >
-              FAQ
-            </button>
-            <button 
-              onClick={() => handleNavigation('/about')} 
-              className="hover:text-amber-400 transition-colors duration-200"
-            >
-              About Us
-            </button>
-            <button 
-              onClick={() => handleNavigation('/privacy')} 
-              className="hover:text-amber-400 transition-colors duration-200"
-            >
-              Privacy Policy
-            </button>
-            <button 
-              onClick={() => handleNavigation('/contact')} 
-              className="hover:text-amber-400 transition-colors duration-200"
-            >
-              Contact Us
-            </button>
+            <button onClick={() => handleNavigation('/')} className="hover:text-amber-400 transition-colors duration-200">Home</button>
+            <button onClick={() => handleNavigation('/#how-it-works')} className="hover:text-amber-400 transition-colors duration-200">How It Works</button>
+            <button onClick={() => handleNavigation('/faq')} className="hover:text-amber-400 transition-colors duration-200">FAQ</button>
+            <button onClick={() => handleNavigation('/about')} className="hover:text-amber-400 transition-colors duration-200">About Us</button>
+            <button onClick={() => handleNavigation('/privacy')} className="hover:text-amber-400 transition-colors duration-200">Privacy Policy</button>
+            <button onClick={() => handleNavigation('/contact')} className="hover:text-amber-400 transition-colors duration-200">Contact Us</button>
           </nav>
 
           {/* Right Side Actions / Mobile Toggle */}
@@ -197,7 +166,6 @@ export default function RegisterPage() {
               </button>
             </div>
 
-            {/* Mobile Hamburger Toggle Button (Affects mobile only) */}
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-stone-200 hover:text-white focus:outline-none"
@@ -219,57 +187,16 @@ export default function RegisterPage() {
         {/* Mobile Dropdown Menu Drawer */}
         {isMobileMenuOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-stone-800/80 flex flex-col space-y-3 bg-stone-950/95 p-4 rounded-2xl border backdrop-blur-lg">
-            <button 
-              onClick={() => handleNavigation('/')} 
-              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
-            >
-              Home
-            </button>
-            <button 
-              onClick={() => handleNavigation('/#how-it-works')} 
-              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
-            >
-              How It Works
-            </button>
-            <button 
-              onClick={() => handleNavigation('/faq')} 
-              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
-            >
-              FAQ
-            </button>
-            <button 
-              onClick={() => handleNavigation('/about')} 
-              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
-            >
-              About Us
-            </button>
-            <button 
-              onClick={() => handleNavigation('/privacy')} 
-              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
-            >
-              Privacy Policy
-            </button>
-            <button 
-              onClick={() => handleNavigation('/contact')} 
-              className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900"
-            >
-              Contact Us
-            </button>
+            <button onClick={() => handleNavigation('/')} className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900">Home</button>
+            <button onClick={() => handleNavigation('/#how-it-works')} className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900">How It Works</button>
+            <button onClick={() => handleNavigation('/faq')} className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900">FAQ</button>
+            <button onClick={() => handleNavigation('/about')} className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900">About Us</button>
+            <button onClick={() => handleNavigation('/privacy')} className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900">Privacy Policy</button>
+            <button onClick={() => handleNavigation('/contact')} className="text-left py-2 px-3 text-stone-200 hover:text-amber-400 font-semibold text-sm rounded-lg hover:bg-stone-900">Contact Us</button>
 
-            {/* Mobile Action Buttons inside Drawer */}
             <div className="pt-3 border-t border-stone-800/60 grid grid-cols-2 gap-3">
-              <button 
-                onClick={() => handleNavigation('/login')}
-                className="w-full py-2.5 bg-stone-900 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 text-center"
-              >
-                Log In
-              </button>
-              <button 
-                onClick={() => handleNavigation('/register')}
-                className="w-full py-2.5 bg-stone-900 text-amber-400 text-sm font-semibold rounded-xl border border-amber-500/20 text-center"
-              >
-                Sign Up
-              </button>
+              <button onClick={() => handleNavigation('/login')} className="w-full py-2.5 bg-stone-900 text-stone-100 text-sm font-semibold rounded-xl border border-stone-800 text-center">Log In</button>
+              <button onClick={() => handleNavigation('/register')} className="w-full py-2.5 bg-stone-900 text-amber-400 text-sm font-semibold rounded-xl border border-amber-500/20 text-center">Sign Up</button>
             </div>
           </div>
         )}
@@ -287,10 +214,8 @@ export default function RegisterPage() {
               className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-[1.05] filter saturate-[0.8] transition-transform duration-700 group-hover:scale-105"
             />
             
-            {/* Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/70 to-transparent z-1"></div>
 
-            {/* Panel Text Elements */}
             <div className="relative z-10 space-y-4">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 backdrop-blur-md">
                 Secure and Real-Time Syncing
@@ -314,14 +239,12 @@ export default function RegisterPage() {
               </button>
             </p>
 
-            {/* Error Message banner */}
             {errorMsg && (
               <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-sm text-red-400 font-semibold">
                 {errorMsg}
               </div>
             )}
 
-            {/* Success Message banner */}
             {successMsg ? (
               <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-8 text-center space-y-3 animate-pulse">
                 <h3 className="text-xl font-bold text-green-400">Profile Initialized</h3>
@@ -387,10 +310,24 @@ export default function RegisterPage() {
                   </select>
                 </div>
 
-                {/* Grid Layout for Passwords */}
+                {/* Staff / Referral Code (Optional) */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1.5">
+                    Staff / Referral Code <span className="text-stone-500 font-normal lowercase">(optional)</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    value={formData.staffCode}
+                    onChange={(e) => setFormData({...formData, staffCode: e.target.value})}
+                    placeholder="Enter staff referral code (e.g. STF-102)" 
+                    className="w-full bg-stone-900/60 border border-stone-800/80 rounded-xl px-4 py-3 text-stone-100 text-sm focus:outline-none focus:border-amber-500 transition font-medium font-mono uppercase"
+                  />
+                </div>
+
+                {/* Passwords */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
-                  {/* Password Field with Eye Icon */}
+                  {/* Password Field */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1.5">Password</label>
                     <div className="relative">
@@ -408,12 +345,10 @@ export default function RegisterPage() {
                         className="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-amber-400 transition-colors"
                       >
                         {showPassword ? (
-                          /* Eye Off Icon */
                           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                           </svg>
                         ) : (
-                          /* Eye Icon */
                           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -423,7 +358,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Confirm Password Field with Eye Icon */}
+                  {/* Confirm Password Field */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1.5">Confirm Password</label>
                     <div className="relative">
@@ -441,12 +376,10 @@ export default function RegisterPage() {
                         className="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-amber-400 transition-colors"
                       >
                         {showConfirmPassword ? (
-                          /* Eye Off Icon */
                           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                           </svg>
                         ) : (
-                          /* Eye Icon */
                           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
