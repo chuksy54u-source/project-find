@@ -89,38 +89,33 @@ export default function CheckoutPage() {
       const initializePayment = PaystackHook(paystackConfig)
 
       const handleSuccess = async (reference) => {
-        try {
-          const { error: paymentError } = await supabase
-            .from('payments')
-            .insert({
-              user_id: user.id,
-              sender_name: profileData?.full_name || user.email,
-              amount: paymentAmountInNaira,
-              receipt_url: `paystack_ref:${reference.reference}`,
-              status: 'approved'
-            })
+  try {
+    const res = await fetch('/api/paystack/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reference: reference.reference,
+        userId: user.id,
+        userEmail: user.email,
+        userName: profileData?.full_name,
+        amount: paymentAmountInNaira
+      })
+    })
 
-          if (paymentError) throw paymentError
+    const data = await res.json()
 
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ payment_status: 'paid' })
-            .eq('id', user.id)
-
-          if (profileError) throw profileError
-
-          router.push('/checkout/success')
-        } catch (err) {
-          console.error("DB error:", err)
-          alert("Payment received, but updating profile failed. Contact support.")
-        } finally {
-          setProcessing(false)
-        }
-      }
-
-      const handleClose = () => {
-        setProcessing(false)
-      }
+    if (res.ok && data.success) {
+      router.push('/checkout/success')
+    } else {
+      alert(`Payment received, but database update failed: ${data.error}`)
+    }
+  } catch (err) {
+    console.error("Verification request error:", err)
+    alert("Payment verification failed. Please contact support.")
+  } finally {
+    setProcessing(false)
+  }
+}
 
       initializePayment(handleSuccess, handleClose)
     } catch (err) {

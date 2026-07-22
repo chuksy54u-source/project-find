@@ -27,7 +27,26 @@ export default function StaffDashboard() {
   const [uploading, setUploading] = useState(false)
   const [reportSuccess, setReportSuccess] = useState('')
 
-  // 1. Fetch Current Staff User & Recruits
+  // Helper function to fetch recruits (Normalized with UPPERCASE)
+  const fetchRecruits = async (staffCode, currentUserId) => {
+    if (!staffCode) return
+    
+    // Normalize code to uppercase for the query
+    const normalizedCode = staffCode.trim().toUpperCase()
+
+    const { data: recruitedUsers, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, phone_number, interests, payment_status, updated_at')
+      .ilike('staff_code', normalizedCode) // ilike makes the query case-insensitive
+      .neq('id', currentUserId)
+      .order('updated_at', { ascending: false })
+
+    if (!error && recruitedUsers) {
+      setRecruits(recruitmentUsers || recruitedUsers)
+    }
+  }
+
+  // 1. Fetch Current Staff User & Initial Recruits
   useEffect(() => {
     async function loadStaffData() {
       try {
@@ -39,7 +58,7 @@ export default function StaffDashboard() {
           return
         }
 
-        // Get user profile from profiles table
+        // Get user profile
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
@@ -47,30 +66,22 @@ export default function StaffDashboard() {
           .single()
 
         if (error || !profile?.is_staff) {
-          // Not authorized as staff
           alert("Access Denied: You are not authorized as staff.")
           router.push('/')
           return
+        }
+
+        // Normalize staff_code to UPPERCASE
+        if (profile.staff_code) {
+          profile.staff_code = profile.staff_code.trim().toUpperCase()
         }
 
         setStaffProfile(profile)
         setReportInput(profile.staff_report || '')
         setWorkStartedAt(profile.work_started_at)
 
-        // Fetch all users recruited by this staff code (excluding the staff member themselves)
         if (profile.staff_code) {
-          const { data: recruitedUsers, error: recruitError } = await supabase
-            .from('profiles')
-            .select('id, full_name, email, phone_number, interests, payment_status, updated_at')
-            .eq('staff_code', profile.staff_code)
-            .neq('id', user.id)
-            .order('updated_at', { ascending: false })
-
-          if (recruitError) {
-            console.error("Error fetching recruited candidates:", recruitError)
-          }
-
-          setRecruits(recruitedUsers || [])
+          await fetchRecruits(profile.staff_code, user.id)
         }
       } catch (err) {
         console.error("Unexpected error in staff portal:", err)
@@ -82,14 +93,45 @@ export default function StaffDashboard() {
     loadStaffData()
   }, [router])
 
-  // 2. 7-Day Countdown Timer Logic
+  // 2. REAL-TIME LISTENER (Case-Insensitive Handling)
+  useEffect(() => {
+    if (!staffProfile?.staff_code || !staffProfile?.id) return
+
+    const normalizedCode = staffProfile.staff_code.trim().toUpperCase()
+
+    // Subscribe to Postgres changes on the 'profiles' table
+    const channel = supabase
+      .channel('realtime_recruits')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          // Check if payload staff_code matches (case-insensitive)
+          const newStaffCode = payload.new?.staff_code?.trim()?.toUpperCase()
+          if (newStaffCode === normalizedCode) {
+            fetchRecruits(normalizedCode, staffProfile.id)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [staffProfile])
+
+  // 3. 7-Day Countdown Timer Logic
   useEffect(() => {
     if (!workStartedAt) return
 
     const calculateTime = () => {
       const now = new Date().getTime()
       const startTime = new Date(workStartedAt).getTime()
-      const targetTime = startTime + (7 * 24 * 60 * 60 * 1000) // 7 days in milliseconds
+      const targetTime = startTime + (7 * 24 * 60 * 60 * 1000)
       const diff = targetTime - now
 
       if (diff <= 0) {
@@ -123,7 +165,7 @@ export default function StaffDashboard() {
     }
   }
 
-  // Handle Report Submission (Google Sheets Link or File Upload)
+  // Handle Report Submission
   const handleReportSubmit = async (e) => {
     e.preventDefault()
     setUploading(true)
@@ -131,7 +173,6 @@ export default function StaffDashboard() {
 
     let finalReportUrl = reportInput
 
-    // If a file was uploaded instead of a link
     if (selectedFile) {
       const fileExt = selectedFile.name.split('.').pop()
       const filePath = `reports/${staffProfile.id}_${Date.now()}.${fileExt}`
@@ -153,7 +194,6 @@ export default function StaffDashboard() {
       finalReportUrl = publicUrlData.publicUrl
     }
 
-    // Save report URL/link into profiles table
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ staff_report: finalReportUrl })
@@ -238,10 +278,10 @@ export default function StaffDashboard() {
 
         </div>
 
-        {/* WORK CYCLE COUNTER & REPORT SUBMISSION (SPLIT GRID) */}
+        {/* WORK CYCLE COUNTER & REPORT SUBMISSION */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* 7-DAY TIMELINE COUNTER CARD */}
+          {/* TIMELINE COUNTER */}
           <div className="lg:col-span-6 bg-stone-900/40 border border-stone-800 p-8 rounded-3xl shadow-2xl backdrop-blur-md space-y-6">
             <div className="flex justify-between items-center">
               <div>
@@ -296,7 +336,7 @@ export default function StaffDashboard() {
             )}
           </div>
 
-          {/* WEEKLY REPORT SUBMISSION CARD */}
+          {/* REPORT SUBMISSION */}
           <div className="lg:col-span-6 bg-stone-900/40 border border-stone-800 p-8 rounded-3xl shadow-2xl backdrop-blur-md space-y-6">
             <div>
               <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">Staff Deliverables</span>
@@ -353,7 +393,13 @@ export default function StaffDashboard() {
         <section className="bg-stone-900/40 border border-stone-800 rounded-3xl p-8 backdrop-blur-md shadow-2xl space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-black text-white">Your Recruits</h2>
+              <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                Your Recruits
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                  LIVE
+                </span>
+              </h2>
               <p className="text-xs text-stone-400 mt-1">Users registered using your code: <strong>{staffProfile?.staff_code}</strong></p>
             </div>
             <div className="text-xs font-mono font-bold text-stone-400 bg-stone-950 px-4 py-2 rounded-xl border border-stone-800">
