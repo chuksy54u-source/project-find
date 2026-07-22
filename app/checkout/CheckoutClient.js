@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
-import { usePaystackPayment } from 'react-paystack'
 
 const getCleanSupabaseUrl = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -20,10 +19,21 @@ export default function CheckoutClient() {
   const [processing, setProcessing] = useState(false)
   const [user, setUser] = useState(null)
   const [profileData, setProfileData] = useState(null)
+  const [PaystackHook, setPaystackHook] = useState(null)
 
   const paymentAmountInNaira = 3000
   const paymentAmountInKobo = paymentAmountInNaira * 100
 
+  // 1. Dynamically load react-paystack on the client only
+  useEffect(() => {
+    import('react-paystack')
+      .then((mod) => {
+        setPaystackHook(() => mod.usePaystackPayment)
+      })
+      .catch((err) => console.error("Failed to load Paystack module:", err))
+  }, [])
+
+  // 2. Auth & Session Check
   useEffect(() => {
     const checkSession = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -50,66 +60,84 @@ export default function CheckoutClient() {
     checkSession()
   }, [router])
 
-  const paystackConfig = {
-    reference: `PF_${user?.id?.substring(0, 5)}_${new Date().getTime()}`,
-    email: user?.email || '',
-    amount: paymentAmountInKobo,
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
-    metadata: {
-      custom_fields: [
-        {
-          display_name: "Full Name",
-          variable_name: "full_name",
-          value: profileData?.full_name || user?.email,
-        }
-      ]
+  // 3. Payment Handler with Backend Verification API
+  const handleStartPayment = async (e) => {
+    e.preventDefault()
+
+    if (!PaystackHook) {
+      alert("Payment gateway is loading, please try again in a moment.")
+      return
     }
-  }
 
-  const initializePayment = usePaystackPayment(paystackConfig)
-
-  const handlePaystackSuccess = async (reference) => {
     setProcessing(true)
+
+    const paystackConfig = {
+      reference: `PF_${user?.id?.substring(0, 5)}_${new Date().getTime()}`,
+      email: user?.email || '',
+      amount: paymentAmountInKobo,
+      publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+      metadata: {
+        custom_fields: [
+          {
+            display_name: "Full Name",
+            variable_name: "full_name",
+            value: profileData?.full_name || user?.email,
+          }
+        ]
+      }
+    }
+
     try {
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          user_id: user.id,
-          sender_name: profileData?.full_name || user.email,
-          amount: paymentAmountInNaira,
-          receipt_url: `paystack_ref:${reference.reference}`,
-          status: 'approved'
-        })
+      const initializePayment = PaystackHook(paystackConfig)
 
-      if (paymentError) throw paymentError
+      const handlePaystackSuccess = async (reference) => {
+        try {
+          // Call your server API route to insert into payments & update profiles securely
+          const res = await fetch('/api/paystack/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reference: reference.reference,
+              userId: user.id,
+              userEmail: user.email,
+              userName: profileData?.full_name,
+              amount: paymentAmountInNaira
+            })
+          })
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ payment_status: 'paid' })
-        .eq('id', user.id)
+          const data = await res.json()
 
-      if (profileError) throw profileError
+          if (res.ok && data.success) {
+            router.push('/checkout/success')
+          } else {
+            alert(`Payment received, but database update failed: ${data.error}`)
+          }
+        } catch (err) {
+          console.error("Verification error:", err)
+          alert("Verification failed. Please contact support.")
+        } finally {
+          setProcessing(false)
+        }
+      }
 
-      router.push('/checkout/success')
+      const handlePaystackClose = () => {
+        setProcessing(false)
+      }
+
+      initializePayment(handlePaystackSuccess, handlePaystackClose)
     } catch (err) {
-      console.error("Database error:", err)
-      alert("Payment processed, but profile update failed. Contact support.")
-    } finally {
+      console.error("Paystack launch error:", err)
       setProcessing(false)
     }
   }
 
-  const handlePaystackClose = () => {
-    setProcessing(false)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-500 font-bold">
+        Loading Checkout...
+      </div>
+    )
   }
-
-  const handleStartPayment = (e) => {
-    e.preventDefault()
-    setProcessing(true)
-    initializePayment(handlePaystackSuccess, handlePaystackClose)
-  }
-
-  if (loading) return null
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 font-sans relative overflow-x-hidden flex flex-col items-center justify-center p-6">
