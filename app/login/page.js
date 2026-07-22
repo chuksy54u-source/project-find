@@ -53,10 +53,10 @@ export default function LoginPage() {
 
       if (authError) throw authError
 
-      // 2. Sync with profiles table and fetch full_name, is_admin, is_staff, and is_crm
+      // 2. Sync with profiles table and fetch full_name, is_super_admin, is_admin, is_staff, and is_crm
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('full_name, is_admin, is_staff, is_crm')
+        .select('full_name, is_super_admin, is_admin, is_staff, is_crm')
         .eq('id', authData.user.id)
         .single()
 
@@ -66,11 +66,17 @@ export default function LoginPage() {
 
       // 3. Welcome message and role-based redirection routing
       const displayName = profile?.full_name || 'User'
+      const isSuperAdminUser = profile?.is_super_admin === true
       const isAdminUser = profile?.is_admin === true
       const isStaffUser = profile?.is_staff === true
       const isCrmUser = profile?.is_crm === true
 
-      if (isAdminUser) {
+      if (isSuperAdminUser) {
+        setSuccessMsg(`Welcome, Super Administrator ${displayName}! Redirecting to Super Admin Page...`)
+        setTimeout(() => {
+          router.push('/super-admin')
+        }, 1500)
+      } else if (isAdminUser) {
         setSuccessMsg(`Welcome, Administrator ${displayName}! Redirecting to Admin Panel...`)
         setTimeout(() => {
           router.push('/admin')
@@ -101,7 +107,7 @@ export default function LoginPage() {
       } else {
         setErrorMsg(err.message || "Invalid email or password.")
       }
-    } font
+    } finally {
       setLoading(false)
     }
   }
