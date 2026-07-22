@@ -43,7 +43,7 @@ export default function SuperAdminPage() {
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
-    // 1. Verify Super Admin Access
+    // 1. Verify Super Admin Access (Checks for is_super_admin)
     const verifyAccess = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (!authUser) {
@@ -57,7 +57,7 @@ export default function SuperAdminPage() {
         .eq('id', authUser.id)
         .single()
 
-      if (error || !profile?.is_admin) {
+      if (error || !profile?.is_super_admin) {
         alert("Unauthorized access. Super Admin privileges required.")
         router.push('/dashboard')
         return
@@ -74,14 +74,14 @@ export default function SuperAdminPage() {
     return () => clearInterval(timer)
   }, [router])
 
-  // 2. Fetch all personnel where is_admin = true OR is_staff = true
+  // 2. Fetch all personnel where is_admin = true OR is_staff = true OR is_super_admin = true
   const fetchAllStaffData = async () => {
     setLoading(true)
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .or('is_admin.eq.true,is_staff.eq.true')
+        .or('is_admin.eq.true,is_staff.eq.true,is_super_admin.eq.true')
         .order('updated_at', { ascending: false })
 
       if (error) throw error
@@ -132,15 +132,15 @@ export default function SuperAdminPage() {
       staff.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       staff.staff_code?.toLowerCase().includes(searchQuery.toLowerCase())
 
-    if (roleFilter === 'admin') return matchesSearch && staff.is_admin
-    if (roleFilter === 'staff') return matchesSearch && staff.is_staff && !staff.is_admin
+    if (roleFilter === 'admin') return matchesSearch && (staff.is_admin || staff.is_super_admin)
+    if (roleFilter === 'staff') return matchesSearch && staff.is_staff && !staff.is_admin && !staff.is_super_admin
     return matchesSearch
   })
 
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-950 flex items-center justify-center text-stone-300 text-sm">
-        Loading General Admin Management Portal...
+        Loading Super Admin Management Portal...
       </div>
     )
   }
@@ -183,8 +183,8 @@ export default function SuperAdminPage() {
             className="bg-stone-900/60 border border-stone-850 rounded-xl px-4 py-3 text-xs text-stone-300 focus:outline-none focus:border-amber-500"
           >
             <option value="all">All Personnel ({staffMembers.length})</option>
-            <option value="admin">Admins Only ({staffMembers.filter(s => s.is_admin).length})</option>
-            <option value="staff">Staff Only ({staffMembers.filter(s => s.is_staff && !s.is_admin).length})</option>
+            <option value="admin">Admins Only ({staffMembers.filter(s => s.is_admin || s.is_super_admin).length})</option>
+            <option value="staff">Staff Only ({staffMembers.filter(s => s.is_staff && !s.is_admin && !s.is_super_admin).length})</option>
           </select>
         </div>
 
@@ -229,7 +229,12 @@ export default function SuperAdminPage() {
 
                         {/* 3. Role Badges */}
                         <td className="py-4 space-x-1">
-                          {staff.is_admin && (
+                          {staff.is_super_admin && (
+                            <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-red-500/15 text-red-400 border border-red-500/30">
+                              SUPER ADMIN
+                            </span>
+                          )}
+                          {staff.is_admin && !staff.is_super_admin && (
                             <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-amber-500/15 text-amber-400 border border-amber-500/30">
                               ADMIN
                             </span>
