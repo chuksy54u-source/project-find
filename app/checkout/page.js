@@ -1,5 +1,9 @@
 "use client"
+import CheckoutClient from './CheckoutClient'
 
+export default function CheckoutPage() {
+  return <CheckoutClient />
+}
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
