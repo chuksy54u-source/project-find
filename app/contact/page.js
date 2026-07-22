@@ -244,7 +244,7 @@ export default function ContactPage() {
                 <h3 className="text-base font-bold text-stone-400 uppercase tracking-wider">Primary Support Line</h3>
               </div>
               <p className="text-2xl font-black text-white tracking-tight">
-                +234 707 508 1796
+                +234 707 819 6545
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-md">
@@ -265,7 +265,7 @@ export default function ContactPage() {
                 <h3 className="text-base font-bold text-stone-400 uppercase tracking-wider">Secondary Contact Line</h3>
               </div>
               <p className="text-2xl font-black text-amber-400 tracking-tight">
-                +234 802 412 3819
+                +234 909 682 5139
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-md">
