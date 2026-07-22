@@ -30,45 +30,53 @@ export default function StaffDashboard() {
   // 1. Fetch Current Staff User & Recruits
   useEffect(() => {
     async function loadStaffData() {
-      setLoading(true)
-      const { data: { user } } = await supabase.auth.getUser()
+      try {
+        setLoading(true)
+        const { data: { user } } = await supabase.auth.getUser()
 
-      if (!user) {
-        router.push('/login')
-        return
-      }
+        if (!user) {
+          router.push('/login')
+          return
+        }
 
-      // Get user profile
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (error || !profile?.is_staff) {
-        // Not a staff member
-        alert("Access Denied: You are not authorized as staff.")
-        router.push('/')
-        return
-      }
-
-      setStaffProfile(profile)
-      setReportInput(profile.staff_report || '')
-      setWorkStartedAt(profile.work_started_at)
-
-      // Fetch all users recruited by this staff code (excluding the staff member themselves)
-      if (profile.staff_code) {
-        const { data: recruitedUsers } = await supabase
+        // Get user profile from profiles table
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('id, full_name, email, phone_number, interests, payment_status, updated_at')
-          .eq('staff_code', profile.staff_code)
-          .neq('id', user.id)
-          .order('updated_at', { ascending: false })
+          .select('*')
+          .eq('id', user.id)
+          .single()
 
-        setRecruits(recruitmentUsers || recruitedUsers || [])
+        if (error || !profile?.is_staff) {
+          // Not authorized as staff
+          alert("Access Denied: You are not authorized as staff.")
+          router.push('/')
+          return
+        }
+
+        setStaffProfile(profile)
+        setReportInput(profile.staff_report || '')
+        setWorkStartedAt(profile.work_started_at)
+
+        // Fetch all users recruited by this staff code (excluding the staff member themselves)
+        if (profile.staff_code) {
+          const { data: recruitedUsers, error: recruitError } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, phone_number, interests, payment_status, updated_at')
+            .eq('staff_code', profile.staff_code)
+            .neq('id', user.id)
+            .order('updated_at', { ascending: false })
+
+          if (recruitError) {
+            console.error("Error fetching recruited candidates:", recruitError)
+          }
+
+          setRecruits(recruitedUsers || [])
+        }
+      } catch (err) {
+        console.error("Unexpected error in staff portal:", err)
+      } finally {
+        setLoading(false)
       }
-
-      setLoading(false)
     }
 
     loadStaffData()
@@ -225,7 +233,7 @@ export default function StaffDashboard() {
             <div className="text-3xl font-black text-emerald-400 mt-2">
               {recruits.filter(r => r.payment_status?.toLowerCase() === 'paid').length}
             </div>
-            <p className="text-xs text-stone-400 mt-2">Users who completed the ₦3,000 service payment.</p>
+            <p className="text-xs text-stone-400 mt-2">Users who completed the service payment.</p>
           </div>
 
         </div>
