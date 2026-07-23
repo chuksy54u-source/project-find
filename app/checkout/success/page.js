@@ -19,19 +19,42 @@ export default function CheckoutSuccessPage() {
   const [user, setUser] = useState(null)
 
   useEffect(() => {
-    const checkSession = async () => {
+    const verifyPaymentAndSession = async () => {
+      // 1. Check if user is logged in
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (!authUser) {
         router.push('/login')
         return
       }
+
+      // 2. Query Supabase to confirm their payment_status is actually 'paid'
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('payment_status')
+        .eq('id', authUser.id)
+        .single()
+
+      // 3. If profile fetch fails or payment_status isn't 'paid', redirect to checkout page
+      if (error || profile?.payment_status !== 'paid') {
+        router.push('/checkout')
+        return
+      }
+
       setUser(authUser)
       setLoading(false)
     }
-    checkSession()
+
+    verifyPaymentAndSession()
   }, [router])
 
-  if (loading) return null
+  // Show a clean loading state while verifying database status to prevent layout flashing
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-stone-950 flex items-center justify-center text-emerald-500 font-bold text-xs uppercase tracking-widest">
+        Verifying access...
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 font-sans relative overflow-x-hidden flex flex-col items-center justify-center p-6">

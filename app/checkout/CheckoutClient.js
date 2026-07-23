@@ -19,21 +19,11 @@ export default function CheckoutClient() {
   const [processing, setProcessing] = useState(false)
   const [user, setUser] = useState(null)
   const [profileData, setProfileData] = useState(null)
-  const [PaystackHook, setPaystackHook] = useState(null)
 
   const paymentAmountInNaira = 3000
   const paymentAmountInKobo = paymentAmountInNaira * 100
 
-  // 1. Dynamically load react-paystack on the client only
-  useEffect(() => {
-    import('react-paystack')
-      .then((mod) => {
-        setPaystackHook(() => mod.usePaystackPayment)
-      })
-      .catch((err) => console.error("Failed to load Paystack module:", err))
-  }, [])
-
-  // 2. Auth & Session Check
+  // 1. Auth & Session Check
   useEffect(() => {
     const checkSession = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -60,74 +50,90 @@ export default function CheckoutClient() {
     checkSession()
   }, [router])
 
-  // 3. Payment Handler with Backend Verification API
-  const handleStartPayment = async (e) => {
-    e.preventDefault()
-
-    if (!PaystackHook) {
-      alert("Payment gateway is loading, please try again in a moment.")
-      return
-    }
-
-    setProcessing(true)
-
-    const paystackConfig = {
-      reference: `PF_${user?.id?.substring(0, 5)}_${new Date().getTime()}`,
-      email: user?.email || '',
+  // 2. Open Paystack Native Popup Modal
+  const openPaystackModal = () => {
+    const handler = window.PaystackPop.setup({
+      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+      email: user?.email,
       amount: paymentAmountInKobo,
-      publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+      ref: `PF_${user?.id?.substring(0, 5)}_${new Date().getTime()}`,
       metadata: {
         custom_fields: [
           {
             display_name: "Full Name",
             variable_name: "full_name",
-            value: profileData?.full_name || user?.email,
+            value: profileData?.full_name || user?.email || '',
           }
         ]
-      }
-    }
-
-    try {
-      const initializePayment = PaystackHook(paystackConfig)
-
-      const handlePaystackSuccess = async (reference) => {
-        try {
-          // Call your server API route to insert into payments & update profiles securely
-          const res = await fetch('/api/paystack/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              reference: reference.reference,
-              userId: user.id,
-              userEmail: user.email,
-              userName: profileData?.full_name,
-              amount: paymentAmountInNaira
-            })
-          })
-
-          const data = await res.json()
-
-          if (res.ok && data.success) {
-            router.push('/checkout/success')
-          } else {
-            alert(`Payment received, but database update failed: ${data.error}`)
-          }
-        } catch (err) {
-          console.error("Verification error:", err)
-          alert("Verification failed. Please contact support.")
-        } finally {
-          setProcessing(false)
-        }
-      }
-
-      const handlePaystackClose = () => {
+      },
+      callback: function (response) {
+        handlePaystackSuccess(response)
+      },
+      onClose: function () {
         setProcessing(false)
       }
+    })
+    handler.openIframe()
+  }
 
-      initializePayment(handlePaystackSuccess, handlePaystackClose)
+  // 3. Call Backend Verification API Route
+  const handlePaystackSuccess = async (response) => {
+    try {
+      const refString = typeof response === 'object' ? response.reference : response
+
+      const res = await fetch('/api/paystack/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reference: refString,
+          userId: user.id,
+          userEmail: user.email,
+          userName: profileData?.full_name || user.email,
+          amount: paymentAmountInNaira
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        router.push('/checkout/success')
+      } else {
+        alert(`Payment verification error:\n${data.error || 'Failed to update database'}`)
+      }
     } catch (err) {
-      console.error("Paystack launch error:", err)
+      console.error("Verification error:", err)
+      alert("Could not reach verification server. Please check your network connection.")
+    } finally {
       setProcessing(false)
+    }
+  }
+
+  // 4. Start Payment Flow
+  const handleStartPayment = (e) => {
+    e.preventDefault()
+
+    const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+
+    if (!publicKey || publicKey.trim() === '') {
+      alert("Paystack Public Key is missing!\n\n1. Ensure NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY is set in your .env.local file.\n2. Restart your dev server (npm run dev).")
+      return
+    }
+
+    setProcessing(true)
+
+    // Load Paystack Inline JS script dynamically if not loaded yet
+    if (typeof window !== 'undefined' && window.PaystackPop) {
+      openPaystackModal()
+    } else {
+      const script = document.createElement('script')
+      script.src = 'https://js.paystack.co/v1/inline.js'
+      script.async = true
+      script.onload = () => openPaystackModal()
+      script.onerror = () => {
+        setProcessing(false)
+        alert("Failed to load Paystack popup. Check your internet connection or disable ad-blockers/extensions.")
+      }
+      document.body.appendChild(script)
     }
   }
 
