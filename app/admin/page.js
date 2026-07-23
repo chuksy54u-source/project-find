@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('payments') // 'payments' | 'interviews' | 'candidates'
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false) // Mobile hamburger toggle
+  const [savingInterviewId, setSavingInterviewId] = useState(null)
   
   // Dynamic Input States for Interviews
   const [meetingInputs, setMeetingInputs] = useState({}) 
@@ -50,6 +51,7 @@ export default function AdminDashboard() {
   const [roleInputs, setRoleInputs] = useState({})
   const [dateInputs, setDateInputs] = useState({})
   const [notesInputs, setNotesInputs] = useState({})
+  const [cvFileInputs, setCvFileInputs] = useState({})
 
   useEffect(() => {
     const verifyAdminSession = async () => {
@@ -91,40 +93,71 @@ export default function AdminDashboard() {
         return
       }
 
-      // 1. Fetch pending payments filtered by user's staff_code
+      const normalizedCode = staffCode.trim().toUpperCase()
+
+      // 1. Fetch pending payments filtered by admin's staff_code
       const { data: paymentsData, error: paymentsErr } = await supabase
         .from('payments')
         .select(`*, profiles!inner(full_name, email, phone_number, staff_code)`)
         .eq('status', 'pending')
-        .eq('profiles.staff_code', staffCode)
+        .ilike('profiles.staff_code', normalizedCode)
         .order('created_at', { ascending: false })
 
       if (paymentsErr) console.error("Error fetching payments:", paymentsErr)
 
-      // 2. Fetch interviews filtered by user's staff_code
-      const { data: interviewsData, error: interviewsErr } = await supabase
-        .from('interviews')
-        .select(`*, profiles!inner(full_name, email, phone_number, payment_status, interests, staff_code)`)
-        .eq('profiles.staff_code', staffCode)
-        .order('created_at', { ascending: false })
-
-      if (interviewsErr) console.error("Error fetching interviews:", interviewsErr)
-
-      // 3. Fetch candidate profiles filtered by staff_code
+      // 2. Fetch candidate profiles filtered by staff_code
       const { data: profilesData, error: profilesErr } = await supabase
         .from('profiles')
         .select('*')
-        .eq('staff_code', staffCode)
+        .ilike('staff_code', normalizedCode)
         .order('updated_at', { ascending: false })
+
+      let cleanCandidateProfiles = []
+      let verifiedPaidOnly = []
 
       if (profilesErr) {
         console.error("Error fetching profiles:", profilesErr)
       } else if (profilesData) {
-        const cleanCandidateProfiles = profilesData.filter(p => p.is_admin !== true)
+        cleanCandidateProfiles = profilesData.filter(p => !p.is_admin && !p.is_crm && !p.is_super_admin && !p.is_staff)
         setProfiles(cleanCandidateProfiles)
 
-        const verifiedPaidOnly = cleanCandidateProfiles.filter(p => p.payment_status === 'paid')
+        verifiedPaidOnly = cleanCandidateProfiles.filter(p => p.payment_status?.toLowerCase() === 'paid')
         setPaidCandidates(verifiedPaidOnly)
+      }
+
+      // 3. Fetch interviews filtered by admin's staff_code
+      let { data: interviewsData, error: interviewsErr } = await supabase
+        .from('interviews')
+        .select(`*, profiles!inner(id, full_name, email, phone_number, payment_status, interests, staff_code)`)
+        .ilike('profiles.staff_code', normalizedCode)
+        .order('created_at', { ascending: false })
+
+      if (interviewsErr) console.error("Error fetching interviews:", interviewsErr)
+
+      // 4. Auto-initialize interview records for any candidate under this staff code who doesn't have one
+      if (verifiedPaidOnly.length > 0) {
+        const existingInterviewUserIds = new Set((interviewsData || []).map(i => i.user_id))
+        const missingCandidates = verifiedPaidOnly.filter(p => !existingInterviewUserIds.has(p.id))
+
+        if (missingCandidates.length > 0) {
+          const rowsToInsert = missingCandidates.map(c => ({
+            user_id: c.id,
+            status: 'pending'
+          }))
+
+          const { error: insertErr } = await supabase.from('interviews').insert(rowsToInsert)
+
+          if (!insertErr) {
+            // Re-fetch interviews list after inserting missing candidates
+            const { data: refreshedInterviews } = await supabase
+              .from('interviews')
+              .select(`*, profiles!inner(id, full_name, email, phone_number, payment_status, interests, staff_code)`)
+              .ilike('profiles.staff_code', normalizedCode)
+              .order('created_at', { ascending: false })
+
+            if (refreshedInterviews) interviewsData = refreshedInterviews
+          }
+        }
       }
 
       setPendingPayments(paymentsData || [])
@@ -188,33 +221,74 @@ export default function AdminDashboard() {
     }
   }
 
-  // --- 2. SEND MEETING & SAVE SCHEDULING DETAILS ---
-  const handleCreateOrUpdateInterview = async (interviewId) => {
-    const company = companyInputs[interviewId] || null
-    const role = roleInputs[interviewId] || null
-    const date = dateInputs[interviewId] ? new Date(dateInputs[interviewId]).toISOString() : null
-    const link = meetingInputs[interviewId] || null
-    const notesVal = notesInputs[interviewId] || null
-
+  // --- 2. SAVE SCHEDULING DETAILS & UPLOAD CV ---
+  const handleCreateOrUpdateInterview = async (interviewId, candidateUserId) => {
+    setSavingInterviewId(interviewId)
     try {
+      const company = companyInputs[interviewId] || null
+      const role = roleInputs[interviewId] || null
+      const date = dateInputs[interviewId] ? new Date(dateInputs[interviewId]).toISOString() : null
+      const link = meetingInputs[interviewId] || null
+      const notesVal = notesInputs[interviewId] || null
+      const selectedCvFile = cvFileInputs[interviewId]
+
+      let uploadedCvUrl = null
+
+      // Upload CV File to Supabase Storage if provided
+      if (selectedCvFile) {
+        const fileExt = selectedCvFile.name.split('.').pop()
+        const filePath = `resumes/${candidateUserId}_${Date.now()}.${fileExt}`
+
+        let { error: uploadError } = await supabase.storage
+          .from('resumes')
+          .upload(filePath, selectedCvFile, { upsert: true })
+
+        // Fallback bucket check if 'resumes' doesn't exist
+        if (uploadError) {
+          const { error: fallbackErr } = await supabase.storage
+            .from('cvs')
+            .upload(filePath, selectedCvFile, { upsert: true })
+
+          if (fallbackErr) {
+            throw new Error("Failed to upload CV file. Ensure 'resumes' or 'cvs' bucket exists in Supabase Storage.")
+          } else {
+            const { data: pubUrl } = supabase.storage.from('cvs').getPublicUrl(filePath)
+            uploadedCvUrl = pubUrl.publicUrl
+          }
+        } else {
+          const { data: pubUrl } = supabase.storage.from('resumes').getPublicUrl(filePath)
+          uploadedCvUrl = pubUrl.publicUrl
+        }
+      }
+
+      // Build payload
+      const updateData = {
+        company_name: company,
+        role_title: role,
+        interview_date: date,
+        meeting_link: link,
+        notes: notesVal,
+        status: 'scheduled'
+      }
+
+      if (uploadedCvUrl) {
+        updateData.cv_url = uploadedCvUrl
+      }
+
       const { error } = await supabase
         .from('interviews')
-        .update({
-          company_name: company,
-          role_title: role,
-          interview_date: date,
-          meeting_link: link,
-          notes: notesVal,
-          status: 'scheduled'
-        })
+        .update(updateData)
         .eq('id', interviewId)
 
       if (error) throw error
-      alert("Interview successfully updated.")
+
+      alert("Interview details and candidate CV updated successfully!")
       fetchDashboardData(adminUser?.staff_code)
     } catch (err) {
-      console.error(err)
-      alert("Failed to update schedule updates.")
+      console.error("Save Interview Error:", err)
+      alert(`Failed to save details: ${err?.message || "Unknown error"}`)
+    } finally {
+      setSavingInterviewId(null)
     }
   }
 
@@ -226,11 +300,9 @@ export default function AdminDashboard() {
     if (!confirmation) return
 
     try {
-      // Get target candidate user IDs matching this staff_code
       const candidateIds = profiles.map(p => p.id)
 
       if (candidateIds.length > 0) {
-        // Delete interviews for candidate profiles under this staff code
         const { error: interviewErr } = await supabase
           .from('interviews')
           .delete()
@@ -238,7 +310,6 @@ export default function AdminDashboard() {
         
         if (interviewErr) throw interviewErr
 
-        // Delete payments for candidate profiles under this staff code
         const { error: paymentsErr } = await supabase
           .from('payments')
           .delete()
@@ -246,11 +317,10 @@ export default function AdminDashboard() {
         
         if (paymentsErr) throw paymentsErr
 
-        // Reset payment status on candidate profiles
         const { error: profileErr } = await supabase
           .from('profiles')
           .update({ payment_status: 'unpaid' })
-          .eq('staff_code', adminUser.staff_code)
+          .ilike('staff_code', adminUser.staff_code)
           .eq('is_admin', false)
 
         if (profileErr) throw profileErr
@@ -282,7 +352,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-950 flex items-center justify-center text-white text-sm">
+      <div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-400 font-bold text-sm">
         Loading Command Center...
       </div>
     )
@@ -524,11 +594,11 @@ export default function AdminDashboard() {
           {/* TAB 2: SCHEDULES & MEETINGS */}
           {activeTab === 'interviews' && (
             <div className="bg-stone-900/20 border border-stone-900 rounded-2xl sm:rounded-3xl overflow-hidden p-4 sm:p-6 space-y-4">
-              <h2 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-4">Interviews Pipeline</h2>
+              <h2 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-4">Interviews Pipeline & Candidate CV Management</h2>
               
               {interviews.length === 0 ? (
                 <div className="text-center py-12 text-xs text-stone-500 font-medium">
-                  No interview records assigned to staff code: {adminUser?.staff_code || 'N/A'}.
+                  No candidates assigned to staff code: {adminUser?.staff_code || 'N/A'}.
                 </div>
               ) : (
                 <>
@@ -545,27 +615,36 @@ export default function AdminDashboard() {
                           <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
                             i.status === 'scheduled' ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'
                           }`}>
-                            {i.status.replace('_', ' ')}
+                            {i.status ? i.status.replace('_', ' ') : 'pending'}
                           </span>
                         </div>
 
-                        {/* Resume Link */}
-                        <div className="pt-1">
-                          {i.cv_url ? (
+                        {/* Resume Download or Upload */}
+                        <div className="pt-1 space-y-2">
+                          {i.cv_url && (
                             <a 
                               href={i.cv_url} 
                               target="_blank" 
                               rel="noreferrer"
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-850 border border-stone-800 text-stone-300 rounded-lg text-xs font-bold"
                             >
-                              📥 Download CV
+                              📥 Download Candidate CV
                             </a>
-                          ) : (
-                            <span className="text-stone-600 italic text-[10px]">No CV uploaded</span>
                           )}
+                          <div>
+                            <label className="block text-[10px] font-bold text-amber-400 mb-1 uppercase">
+                              {i.cv_url ? "Replace Candidate CV:" : "Upload Candidate CV:"}
+                            </label>
+                            <input 
+                              type="file"
+                              accept=".pdf, .doc, .docx"
+                              onChange={(e) => setCvFileInputs({...cvFileInputs, [i.id]: e.target.files[0]})}
+                              className="w-full text-xs text-stone-400 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-stone-800 file:text-stone-200"
+                            />
+                          </div>
                         </div>
 
-                        {/* Inputs Container */}
+                        {/* Dynamic Inputs */}
                         <div className="space-y-2 pt-2 border-t border-stone-900">
                           <input 
                             type="text"
@@ -604,10 +683,11 @@ export default function AdminDashboard() {
                         </div>
 
                         <button 
-                          onClick={() => handleCreateOrUpdateInterview(i.id)}
-                          className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-lg text-xs font-extrabold"
+                          onClick={() => handleCreateOrUpdateInterview(i.id, i.user_id || i.profiles?.id)}
+                          disabled={savingInterviewId === i.id}
+                          className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-lg text-xs font-extrabold transition disabled:bg-stone-800 disabled:text-stone-500"
                         >
-                          Save Details
+                          {savingInterviewId === i.id ? "Saving Details & Uploading CV..." : "Save Details & CV"}
                         </button>
                       </div>
                     ))}
@@ -621,7 +701,7 @@ export default function AdminDashboard() {
                           <th className="pb-3">Candidate Info</th>
                           <th className="pb-3">Contact</th>
                           <th className="pb-3">Status</th>
-                          <th className="pb-3">Resume</th>
+                          <th className="pb-3">Candidate Resume / CV</th>
                           <th className="pb-3">Scheduling Data Inputs</th>
                           <th className="pb-3 text-right">Action</th>
                         </tr>
@@ -651,10 +731,10 @@ export default function AdminDashboard() {
                                   ? 'bg-green-500/15 text-green-400' 
                                   : 'bg-amber-500/15 text-amber-400'
                               }`}>
-                                {i.status.replace('_', ' ')}
+                                {i.status ? i.status.replace('_', ' ') : 'pending'}
                               </span>
                             </td>
-                            <td className="py-4">
+                            <td className="py-4 space-y-2 max-w-[200px]">
                               {i.cv_url ? (
                                 <a 
                                   href={i.cv_url} 
@@ -665,8 +745,20 @@ export default function AdminDashboard() {
                                   📥 Download CV
                                 </a>
                               ) : (
-                                <span className="text-stone-600 italic text-[10px]">No CV uploaded</span>
+                                <span className="text-stone-600 italic text-[10px] block">No CV on file</span>
                               )}
+
+                              <div>
+                                <label className="block text-[9px] font-bold text-amber-400 uppercase mb-1">
+                                  {i.cv_url ? "Replace CV File:" : "Attach/Upload CV:"}
+                                </label>
+                                <input 
+                                  type="file"
+                                  accept=".pdf, .doc, .docx"
+                                  onChange={(e) => setCvFileInputs({...cvFileInputs, [i.id]: e.target.files[0]})}
+                                  className="w-full text-[10px] text-stone-400 file:mr-1 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[9px] file:font-bold file:bg-stone-800 file:text-stone-200 cursor-pointer"
+                                />
+                              </div>
                             </td>
                             
                             <td className="py-4 space-y-2 max-w-sm">
@@ -713,10 +805,11 @@ export default function AdminDashboard() {
                             </td>
                             <td className="py-4 text-right">
                               <button 
-                                onClick={() => handleCreateOrUpdateInterview(i.id)}
-                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-lg text-[10px] font-black"
+                                onClick={() => handleCreateOrUpdateInterview(i.id, i.user_id || i.profiles?.id)}
+                                disabled={savingInterviewId === i.id}
+                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 disabled:bg-stone-800 disabled:text-stone-500 text-stone-950 rounded-lg text-[10px] font-black transition"
                               >
-                                Save Details
+                                {savingInterviewId === i.id ? "Saving..." : "Save Details"}
                               </button>
                             </td>
                           </tr>

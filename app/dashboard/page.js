@@ -82,6 +82,7 @@ export default function DashboardPage() {
 
         setUser(authUser)
 
+        // 1. Fetch Profile Data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -116,30 +117,30 @@ export default function DashboardPage() {
           if (!profileData.target_role || !profileData.expected_salary) {
             setShowOnboardingModal(true)
           }
+        }
 
-          const { data: cvData } = await supabase
-            .from('cvs')
-            .select('*')
-            .eq('user_id', authUser.id)
-            .single()
+        // 2. Fetch CV Record
+        const { data: cvData } = await supabase
+          .from('cvs')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .maybeSingle()
 
-          if (cvData) {
-            setCvRecord(cvData)
-          }
+        if (cvData) {
+          setCvRecord(cvData)
+        }
 
-          if (profileData.payment_status === 'paid') {
-            const { data: interviewData, error: interviewError } = await supabase
-              .from('interviews')
-              .select('*')
-              .eq('user_id', authUser.id)
-              .order('created_at', { ascending: false })
+        // 3. Unconditionally Fetch Interviews
+        const { data: interviewData, error: interviewError } = await supabase
+          .from('interviews')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .order('created_at', { ascending: false })
 
-            if (!interviewError && interviewData) {
-              setInterviews(interviewData)
-            } else {
-              console.error("Error fetching interviews:", interviewError)
-            }
-          }
+        if (interviewError) {
+          console.error("Error fetching interviews:", interviewError)
+        } else if (interviewData) {
+          setInterviews(interviewData)
         }
 
       } catch (err) {
@@ -742,13 +743,10 @@ export default function DashboardPage() {
                   ) : (
                     <div className="space-y-4">
                       {interviews.map((interview) => {
-                        const isFullyScheduled = 
-                          interview.company_name && 
-                          interview.role_title && 
-                          interview.interview_date && 
-                          interview.notes;
+                        // Display full details if primary company or role info is available
+                        const hasDetails = Boolean(interview.company_name || interview.role_title);
 
-                        if (!isFullyScheduled) {
+                        if (!hasDetails) {
                           return (
                             <div key={interview.id} className="p-4 sm:p-5 bg-stone-900/20 border border-stone-850 rounded-2xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                               <div className="absolute top-0 left-0 w-1 h-full bg-amber-500/40"></div>
@@ -761,7 +759,7 @@ export default function DashboardPage() {
                                 <p className="text-[10px] text-stone-500 font-medium">We are currently matching your profile with open roles from our partner companies. Once an employer selects your application, your interview schedule will appear here.</p>
                               </div>
                               <span className="text-[9px] bg-stone-900 border border-stone-800 text-stone-400 px-2 py-1 rounded font-mono uppercase font-semibold">
-                                Status: Searching
+                                Status: {interview.status || 'Searching'}
                               </span>
                             </div>
                           );
@@ -774,12 +772,12 @@ export default function DashboardPage() {
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                               <div>
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className="text-sm font-extrabold text-white">{interview.company_name}</span>
+                                  <span className="text-sm font-extrabold text-white">{interview.company_name || 'Pending Company'}</span>
                                   <span className="text-[9px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider border border-green-500/20">
                                     {interview.status || 'Scheduled'}
                                   </span>
                                 </div>
-                                <p className="text-xs font-bold text-amber-400">{interview.role_title}</p>
+                                <p className="text-xs font-bold text-amber-400">{interview.role_title || 'Role Unassigned'}</p>
                               </div>
                               
                               {interview.meeting_link && (
@@ -798,12 +796,14 @@ export default function DashboardPage() {
                               <div>
                                 <span className="block text-[9px] uppercase tracking-wider text-stone-500 font-bold mb-1">Interview Timeline</span>
                                 <p className="text-xs font-medium text-stone-300 font-mono">
-                                  {new Date(interview.interview_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                                  {interview.interview_date 
+                                    ? new Date(interview.interview_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+                                    : 'Date to be specified'}
                                 </p>
                               </div>
                               <div>
                                 <span className="block text-[9px] uppercase tracking-wider text-stone-500 font-bold mb-1">Coordinator Notes</span>
-                                <p className="text-xs text-stone-300 leading-relaxed font-sans">{interview.notes}</p>
+                                <p className="text-xs text-stone-300 leading-relaxed font-sans">{interview.notes || 'No extra notes provided.'}</p>
                               </div>
                             </div>
                           </div>

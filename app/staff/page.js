@@ -27,7 +27,7 @@ export default function StaffDashboard() {
   const [uploading, setUploading] = useState(false)
   const [reportSuccess, setReportSuccess] = useState('')
 
-  // Helper function to fetch recruits (Normalized with UPPERCASE)
+  // Helper function to fetch recruits (Filters out admins, crm, super admins, and staff)
   const fetchRecruits = async (staffCode, currentUserId) => {
     if (!staffCode) return
     
@@ -36,13 +36,22 @@ export default function StaffDashboard() {
 
     const { data: recruitedUsers, error } = await supabase
       .from('profiles')
-      .select('id, full_name, email, phone_number, interests, payment_status, updated_at')
+      .select('id, full_name, email, phone_number, interests, payment_status, updated_at, is_admin, is_crm, is_super_admin, is_staff')
       .ilike('staff_code', normalizedCode) // ilike makes the query case-insensitive
       .neq('id', currentUserId)
       .order('updated_at', { ascending: false })
 
     if (!error && recruitedUsers) {
-      setRecruits(recruitmentUsers || recruitedUsers)
+      // Filter out users where is_admin, is_crm, is_super_admin, or is_staff is true
+      const filteredRecruits = recruitedUsers.filter((user) => 
+        !user.is_admin && 
+        !user.is_crm && 
+        !user.is_super_admin && 
+        !user.is_staff
+      )
+      setRecruits(filteredRecruits)
+    } else if (error) {
+      console.error("Error fetching recruits:", error)
     }
   }
 
