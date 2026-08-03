@@ -27,22 +27,20 @@ export default function StaffDashboard() {
   const [uploading, setUploading] = useState(false)
   const [reportSuccess, setReportSuccess] = useState('')
 
-  // Helper function to fetch recruits (Filters out admins, crm, super admins, and staff)
+  // Helper function to fetch recruits
   const fetchRecruits = async (staffCode, currentUserId) => {
     if (!staffCode) return
     
-    // Normalize code to uppercase for the query
     const normalizedCode = staffCode.trim().toUpperCase()
 
     const { data: recruitedUsers, error } = await supabase
       .from('profiles')
       .select('id, full_name, email, phone_number, interests, payment_status, updated_at, is_admin, is_crm, is_super_admin, is_staff')
-      .ilike('staff_code', normalizedCode) // ilike makes the query case-insensitive
+      .ilike('staff_code', normalizedCode)
       .neq('id', currentUserId)
       .order('updated_at', { ascending: false })
 
     if (!error && recruitedUsers) {
-      // Filter out users where is_admin, is_crm, is_super_admin, or is_staff is true
       const filteredRecruits = recruitedUsers.filter((user) => 
         !user.is_admin && 
         !user.is_crm && 
@@ -67,7 +65,6 @@ export default function StaffDashboard() {
           return
         }
 
-        // Get user profile
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
@@ -80,7 +77,6 @@ export default function StaffDashboard() {
           return
         }
 
-        // Normalize staff_code to UPPERCASE
         if (profile.staff_code) {
           profile.staff_code = profile.staff_code.trim().toUpperCase()
         }
@@ -102,13 +98,12 @@ export default function StaffDashboard() {
     loadStaffData()
   }, [router])
 
-  // 2. REAL-TIME LISTENER (Case-Insensitive Handling)
+  // 2. Realtime listener
   useEffect(() => {
     if (!staffProfile?.staff_code || !staffProfile?.id) return
 
     const normalizedCode = staffProfile.staff_code.trim().toUpperCase()
 
-    // Subscribe to Postgres changes on the 'profiles' table
     const channel = supabase
       .channel('realtime_recruits')
       .on(
@@ -119,7 +114,6 @@ export default function StaffDashboard() {
           table: 'profiles',
         },
         (payload) => {
-          // Check if payload staff_code matches (case-insensitive)
           const newStaffCode = payload.new?.staff_code?.trim()?.toUpperCase()
           if (newStaffCode === normalizedCode) {
             fetchRecruits(normalizedCode, staffProfile.id)
@@ -174,7 +168,7 @@ export default function StaffDashboard() {
     }
   }
 
-  // Handle Report Submission
+  // Submit Report & Reset Shift/Timer
   const handleReportSubmit = async (e) => {
     e.preventDefault()
     setUploading(true)
@@ -203,9 +197,13 @@ export default function StaffDashboard() {
       finalReportUrl = publicUrlData.publicUrl
     }
 
+    // Save report & clear work_started_at in Supabase
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ staff_report: finalReportUrl })
+      .update({ 
+        staff_report: finalReportUrl,
+        work_started_at: null 
+      })
       .eq('id', staffProfile.id)
 
     setUploading(false)
@@ -214,7 +212,11 @@ export default function StaffDashboard() {
       alert("Error saving report.")
     } else {
       setReportSuccess("Weekly report successfully submitted!")
-      setReportInput(finalReportUrl)
+      setReportInput('')
+      setSelectedFile(null)
+      // Reset local state to show "Start Work" button & clear timer
+      setWorkStartedAt(null)
+      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isOverdue: false })
     }
   }
 
@@ -260,7 +262,6 @@ export default function StaffDashboard() {
 
         {/* TOP STATS CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
           <div className="bg-stone-950/90 border border-stone-850 p-6 rounded-2xl shadow-xl backdrop-blur-md">
             <span className="text-xs font-mono font-bold text-stone-400 uppercase">Assigned Staff Code</span>
             <div className="text-3xl font-black text-amber-400 mt-2 font-mono tracking-wider">
@@ -284,7 +285,6 @@ export default function StaffDashboard() {
             </div>
             <p className="text-xs text-stone-400 mt-2">Users who completed the service payment.</p>
           </div>
-
         </div>
 
         {/* WORK CYCLE COUNTER & REPORT SUBMISSION */}
