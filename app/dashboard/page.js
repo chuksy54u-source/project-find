@@ -37,6 +37,9 @@ export default function DashboardPage() {
   // --- MOBILE MENU STATE ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  // --- ENLARGED NOTES POPUP STATE ---
+  const [selectedNotesModal, setSelectedNotesModal] = useState(null)
+
   // --- POPUP & EDIT DETAILS FORM STATE ---
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   const [savingDetails, setSavingDetails] = useState(false)
@@ -792,22 +795,48 @@ export default function DashboardPage() {
                               )}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-stone-950/50 p-3.5 sm:p-4 rounded-xl border border-stone-900">
-                              <div>
-                                <span className="block text-[9px] uppercase tracking-wider text-stone-500 font-bold mb-1">Interview Timeline</span>
-                                <p className="text-xs font-medium text-stone-300 font-mono">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-stone-950/60 p-4 sm:p-5 rounded-2xl border border-stone-850/80 shadow-inner">
+                              <div className="md:col-span-4 space-y-1.5 border-b md:border-b-0 md:border-r border-stone-850/80 pb-3 md:pb-0 md:pr-4">
+                                <span className="block text-[9px] uppercase tracking-wider text-stone-400 font-extrabold flex items-center gap-1.5">
+                                  <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  Interview Timeline
+                                </span>
+                                <p className="text-xs font-bold text-amber-300 font-mono bg-stone-900/80 p-2.5 rounded-xl border border-stone-800">
                                   {interview.interview_date 
                                     ? new Date(interview.interview_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
                                     : 'Date to be specified'}
                                 </p>
                               </div>
-                              
-                              {/* --- UPDATED FORMATTED NOTES VIEW --- */}
-                              <div>
-                                <span className="block text-[9px] uppercase tracking-wider text-stone-500 font-bold mb-1.5">Coordinator Notes</span>
-                                <div className="bg-stone-950/80 p-3 rounded-xl border border-stone-850/80 max-h-60 overflow-y-auto custom-scrollbar">
+
+                              {/* --- HIGHLY AESTHETIC ENLARGED COORDINATOR NOTES BOX --- */}
+                              <div className="md:col-span-8 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] uppercase tracking-wider text-amber-400 font-black flex items-center gap-1.5">
+                                    <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Coordinator Instructions & Notes
+                                  </span>
+
+                                  {interview.notes && (
+                                    <button 
+                                      type="button"
+                                      onClick={() => setSelectedNotesModal(interview)}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 border border-amber-500/30 rounded-xl text-[10px] font-black tracking-wide transition shadow-sm group cursor-pointer"
+                                    >
+                                      <span>Enlarge</span>
+                                      <svg className="w-3 h-3 transition-transform group-hover:scale-125" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="bg-stone-950/90 p-4 rounded-2xl border border-stone-850 hover:border-amber-500/30 transition shadow-inner min-h-[140px] max-h-72 overflow-y-auto custom-scrollbar relative">
                                   <p className="text-xs text-stone-200 leading-relaxed font-sans whitespace-pre-wrap break-words">
-                                    {interview.notes || 'No extra notes provided.'}
+                                    {interview.notes || 'No extra notes provided by coordinator.'}
                                   </p>
                                 </div>
                               </div>
@@ -1068,6 +1097,78 @@ export default function DashboardPage() {
         </section>
 
       </main>
+
+      {/* --- ENLARGED HIGHLY AESTHETIC NOTES POPUP MODAL --- */}
+      {selectedNotesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-stone-950 border border-amber-500/40 w-full max-w-3xl rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(245,158,11,0.15)] relative max-h-[90vh] flex flex-col justify-between overflow-hidden">
+            
+            <div className="flex items-start justify-between border-b border-stone-850 pb-4 pr-8">
+              <div>
+                <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 inline-block mb-2">
+                  Official Coordinator Brief
+                </span>
+                <h2 className="text-lg sm:text-xl font-black text-white leading-tight">
+                  {selectedNotesModal.company_name || 'Interview Details'}
+                </h2>
+                <p className="text-xs font-bold text-amber-400 mt-0.5">
+                  {selectedNotesModal.role_title || 'Target Position'}
+                </p>
+              </div>
+
+              <button 
+                type="button"
+                onClick={() => setSelectedNotesModal(null)}
+                className="text-stone-400 hover:text-white bg-stone-900 hover:bg-stone-800 p-2 rounded-xl border border-stone-800 text-xs font-bold transition"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <div className="my-6 overflow-y-auto custom-scrollbar pr-2 flex-grow space-y-4">
+              <div className="flex items-center gap-2 text-stone-400 text-xs font-mono bg-stone-900/60 p-3 rounded-xl border border-stone-850">
+                <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Scheduled Date: </span>
+                <strong className="text-white">
+                  {selectedNotesModal.interview_date 
+                    ? new Date(selectedNotesModal.interview_date).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' })
+                    : 'Unspecified'}
+                </strong>
+              </div>
+
+              <div className="bg-stone-900/40 p-5 sm:p-6 rounded-2xl border border-stone-850 leading-relaxed font-sans text-stone-100 text-sm whitespace-pre-wrap break-words shadow-inner selection:bg-amber-500 selection:text-black">
+                {selectedNotesModal.notes || 'No extra notes provided by coordinator.'}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-stone-850 pt-4">
+              {selectedNotesModal.meeting_link ? (
+                <a 
+                  href={selectedNotesModal.meeting_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full sm:w-auto px-5 py-3 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black rounded-xl text-xs transition text-center shadow-lg"
+                >
+                  Launch Video Call Direct ↗
+                </a>
+              ) : (
+                <span className="text-xs text-stone-500 italic">No video meeting link specified</span>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setSelectedNotesModal(null)}
+                className="w-full sm:w-auto px-5 py-3 bg-stone-900 hover:bg-stone-850 text-stone-300 font-bold rounded-xl text-xs transition border border-stone-800"
+              >
+                Done Reading
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* ONBOARDING MODAL POPUP */}
       {showOnboardingModal && (
