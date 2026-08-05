@@ -1151,7 +1151,7 @@ export default function DashboardPage() {
                   rel="noreferrer"
                   className="w-full sm:w-auto px-5 py-3 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black rounded-xl text-xs transition text-center shadow-lg"
                 >
-                  Launch Video Call Direct ↗
+                  Meeting/Interview/Submission Link ↗
                 </a>
               ) : (
                 <span className="text-xs text-stone-500 italic">No video meeting link specified</span>
