@@ -790,7 +790,7 @@ export default function DashboardPage() {
                                   rel="noreferrer"
                                   className="px-4 py-2.5 bg-amber-500 text-stone-950 hover:bg-amber-400 text-xs font-bold rounded-xl transition shadow-sm w-full sm:w-auto text-center"
                                 >
-                                  Launch Video Call
+                                  Meeting/Interview/Submsission Link
                                 </a>
                               )}
                             </div>
