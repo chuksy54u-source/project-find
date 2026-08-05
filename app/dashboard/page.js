@@ -801,9 +801,15 @@ export default function DashboardPage() {
                                     : 'Date to be specified'}
                                 </p>
                               </div>
+                              
+                              {/* --- UPDATED FORMATTED NOTES VIEW --- */}
                               <div>
-                                <span className="block text-[9px] uppercase tracking-wider text-stone-500 font-bold mb-1">Coordinator Notes</span>
-                                <p className="text-xs text-stone-300 leading-relaxed font-sans">{interview.notes || 'No extra notes provided.'}</p>
+                                <span className="block text-[9px] uppercase tracking-wider text-stone-500 font-bold mb-1.5">Coordinator Notes</span>
+                                <div className="bg-stone-950/80 p-3 rounded-xl border border-stone-850/80 max-h-60 overflow-y-auto custom-scrollbar">
+                                  <p className="text-xs text-stone-200 leading-relaxed font-sans whitespace-pre-wrap break-words">
+                                    {interview.notes || 'No extra notes provided.'}
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
