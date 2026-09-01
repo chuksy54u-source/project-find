@@ -116,7 +116,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-stone-950 text-stone-100 font-sans selection:bg-amber-600 selection:text-white relative overflow-x-hidden flex flex-col justify-between">
       
       {/* Background Ambient Glows */}
-      <div className="fixed inset-0 w-full h-full z-0 bg-stone-950">
+      <div className="fixed inset-0 w-full h-full z-0 bg-stone-950 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-b from-amber-950/10 via-stone-950 to-stone-950 z-1"></div>
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-500/5 blur-[120px] z-1"></div>
       </div>
@@ -343,7 +343,7 @@ export default function LoginPage() {
                     <label className="block text-xs font-bold uppercase tracking-wider text-stone-300">Password</label>
                     <button 
                       type="button" 
-                      onClick={() => alert("Password recovery flows can be configured inside your Supabase dashboard.")} 
+                      onClick={() => router.push('/forgot-password')} 
                       className="text-xs text-amber-400 hover:underline font-bold"
                     >
                       Forgot password?
