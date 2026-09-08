@@ -986,11 +986,11 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
       const link = meetingInputs[interviewId] || null
       const notesVal = notesInputs[interviewId] || null
       const selectedCvFile = cvFileInputs[interviewId]
-      const selectedAttachments = attachmentInputs[interviewId] || [] // ADDED
+      const selectedAttachments = attachmentInputs[interviewId] || [] 
 
       let uploadedCvUrl = null
       let uploadedBucketPath = null
-      let uploadedAttachmentUrls = [] // ADDED
+      let uploadedAttachmentUrls = [] 
 
       if (selectedCvFile) {
         const fileExt = selectedCvFile.name.split('.').pop()
@@ -1018,7 +1018,6 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
           uploadedBucketPath = `resumes/${filePath}`
         }
 
-        // Insert new CV entry into `cvs` table
         if (uploadedCvUrl) {
           await supabase.from('cvs').insert({
             user_id: candidateUserId || null,
@@ -1031,19 +1030,22 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
         }
       }
 
-      // ADDED: UPLOAD MULTIPLE ATTACHMENTS
+      // FIXED: Uploads pointing to the correct 'resumes' bucket with explicit error logging
       if (selectedAttachments.length > 0) {
         for (const file of selectedAttachments) {
           const fileExt = file.name.split('.').pop()
           const filePath = `interview_attachments/${interviewId}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
           
           const { error: uploadError } = await supabase.storage
-            .from('cvs') // using the same cvs bucket for attachments
+            .from('resumes') // Using the correct resumes bucket
             .upload(filePath, file, { upsert: true })
 
           if (!uploadError) {
-            const { data: pubUrl } = supabase.storage.from('cvs').getPublicUrl(filePath)
+            const { data: pubUrl } = supabase.storage.from('resumes').getPublicUrl(filePath)
             uploadedAttachmentUrls.push(pubUrl.publicUrl)
+          } else {
+            console.error("Attachment upload error:", uploadError)
+            alert(`Failed to upload attachment ${file.name}: ${uploadError.message}`)
           }
         }
       }
@@ -1059,7 +1061,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
 
       if (uploadedCvUrl) updateData.cv_url = uploadedCvUrl
 
-      // ADDED: APPEND MULTIPLE ATTACHMENT URLS
+      // APPEND MULTIPLE ATTACHMENT URLS
       if (uploadedAttachmentUrls.length > 0) {
         const existingUrls = interviews.find(i => i.id === interviewId)?.attachments_url || []
         updateData.attachments_url = [...existingUrls, ...uploadedAttachmentUrls]
@@ -1071,6 +1073,13 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
         .eq('id', interviewId)
 
       if (error) throw error
+
+      // Clear the attachments input field state after a successful save
+      setAttachmentInputs(prev => {
+        const newState = { ...prev }
+        delete newState[interviewId]
+        return newState
+      })
 
       alert("Interview details and candidate files updated successfully!")
       fetchDashboardData(staffCode)
