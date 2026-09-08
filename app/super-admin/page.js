@@ -165,7 +165,7 @@ export default function SuperAdminPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between bg-sky-950/40 p-3.5 rounded-xl border border-sky-800/40">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">🖼️</span>
+                <span className="text-xl font-bold text-sky-400">IMG</span>
                 <div>
                   <span className="text-xs font-bold text-sky-400 block">Submitted Image Attachment</span>
                   <span className="text-[10px] text-stone-400 truncate max-w-sm sm:max-w-md block">
@@ -179,7 +179,7 @@ export default function SuperAdminPage() {
                 rel="noreferrer"
                 className="px-4 py-2 bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5"
               >
-                ↗️ View Fullscreen
+                [ View Fullscreen ]
               </a>
             </div>
             <div className="w-full max-h-[500px] bg-stone-950 rounded-xl border border-stone-850 overflow-hidden flex items-center justify-center p-4">
@@ -208,14 +208,13 @@ export default function SuperAdminPage() {
         const isDoc = lower.includes('document')
         const isSlide = lower.includes('presentation')
 
-        const icon = isSheet ? '📊' : isDoc ? '📄' : isSlide ? '🖼️' : '🌐'
         const label = isSheet ? 'Google Sheets Workbook' : isDoc ? 'Google Doc' : isSlide ? 'Google Slides Presentation' : 'Google Workspace File'
 
         return (
           <div className="space-y-3">
             <div className="flex items-center justify-between bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-800/40">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{icon}</span>
+                <span className="text-xl font-bold text-emerald-400">DOC</span>
                 <div>
                   <span className="text-xs font-bold text-emerald-400 block">{label}</span>
                   <span className="text-[10px] text-stone-400 truncate max-w-sm sm:max-w-md block">
@@ -229,7 +228,7 @@ export default function SuperAdminPage() {
                 rel="noreferrer"
                 className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5"
               >
-                🔗 Open Google Document
+                [ Open Document ]
               </a>
             </div>
             <div className="w-full h-[500px] bg-stone-950 rounded-xl border border-stone-850 overflow-hidden">
@@ -250,9 +249,9 @@ export default function SuperAdminPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-800/40">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">📈</span>
+                <span className="text-xl font-bold text-emerald-400">XLS</span>
                 <div>
-                  <span className="text-xs font-bold text-emerald-400 block">Excel / CSV Spreadsheet Document</span>
+                  <span className="text-xs font-bold text-emerald-400 block">Excel / CSV Spreadsheet</span>
                   <span className="text-[10px] text-stone-400 truncate max-w-sm sm:max-w-md block">
                     {trimmed}
                   </span>
@@ -264,7 +263,7 @@ export default function SuperAdminPage() {
                 rel="noreferrer"
                 className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5"
               >
-                📥 Download Spreadsheet
+                [ Download Spreadsheet ]
               </a>
             </div>
             <div className="w-full h-[500px] bg-stone-950 rounded-xl border border-stone-850 overflow-hidden">
@@ -286,7 +285,7 @@ export default function SuperAdminPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between bg-blue-950/40 p-3.5 rounded-xl border border-blue-800/40">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{isWord ? '📝' : '📊'}</span>
+                <span className="text-xl font-bold text-blue-400">{isWord ? 'DOC' : 'PPT'}</span>
                 <div>
                   <span className="text-xs font-bold text-blue-400 block">
                     {isWord ? 'Microsoft Word Document' : 'Microsoft PowerPoint Presentation'}
@@ -302,7 +301,7 @@ export default function SuperAdminPage() {
                 rel="noreferrer"
                 className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5"
               >
-                📥 Download Document
+                [ Download Document ]
               </a>
             </div>
             <div className="w-full h-[500px] bg-stone-950 rounded-xl border border-stone-850 overflow-hidden">
@@ -322,7 +321,7 @@ export default function SuperAdminPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between bg-amber-950/40 p-3.5 rounded-xl border border-amber-800/40">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">📄</span>
+                <span className="text-xl font-bold text-amber-400">PDF</span>
                 <div>
                   <span className="text-xs font-bold text-amber-400 block">Submitted PDF Document</span>
                   <span className="text-[10px] text-stone-400 truncate max-w-sm sm:max-w-md block">
@@ -336,7 +335,7 @@ export default function SuperAdminPage() {
                 rel="noreferrer"
                 className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5"
               >
-                ↗️ Open PDF in New Tab
+                [ Open PDF ]
               </a>
             </div>
             <div className="w-full h-[500px] bg-stone-950 rounded-xl border border-stone-850 overflow-hidden">
@@ -357,7 +356,7 @@ export default function SuperAdminPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between bg-stone-900 p-3.5 rounded-xl border border-stone-800">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">🌐</span>
+              <span className="text-xl font-bold text-amber-400">WEB</span>
               <div>
                 <span className="text-xs font-bold text-amber-400 block">Submitted Web Document / Link</span>
                 <a
@@ -376,7 +375,7 @@ export default function SuperAdminPage() {
               rel="noreferrer"
               className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5"
             >
-              ↗️ Open Link Direct
+              [ Open Link ]
             </a>
           </div>
           <div className="w-full h-[450px] bg-stone-950 rounded-xl border border-stone-850 overflow-hidden">
@@ -449,9 +448,9 @@ export default function SuperAdminPage() {
                   onClick={() => setCovertDropdownOpen(!covertDropdownOpen)}
                   className="px-4 py-2.5 bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/40 text-purple-300 text-xs font-black rounded-xl transition flex items-center gap-2 shadow-lg shadow-purple-950/40"
                 >
-                  <span>🕵️ Covert Operations</span>
+                  <span>Covert Operations</span>
                   <span className="text-[10px] bg-purple-900/80 px-1.5 py-0.5 rounded text-purple-200">
-                    ▼
+                    v
                   </span>
                 </button>
 
@@ -476,7 +475,7 @@ export default function SuperAdminPage() {
                             className="w-full text-left px-3 py-2 text-xs font-mono font-bold text-stone-200 hover:text-purple-300 hover:bg-purple-950/40 rounded-lg transition flex items-center justify-between"
                           >
                             <span>Code: <strong className="text-amber-400">{code}</strong></span>
-                            <span className="text-[10px] text-stone-500 font-sans">Inspect ↗</span>
+                            <span className="text-[10px] text-stone-500 font-sans">[ Inspect ]</span>
                           </button>
                         ))
                       )}
@@ -489,7 +488,7 @@ export default function SuperAdminPage() {
                 onClick={fetchAllStaffData}
                 className="px-4 py-2.5 bg-stone-900 hover:bg-stone-850 border border-stone-800 text-amber-500 text-xs font-bold rounded-xl transition"
               >
-                🔄 Refresh Data
+                Refresh Data
               </button>
             </div>
           </header>
@@ -562,7 +561,7 @@ export default function SuperAdminPage() {
                                 title="Open Covert Portal for this Staff Code"
                               >
                                 <span>{staff.staff_code}</span>
-                                <span className="text-[9px] opacity-0 group-hover:opacity-100 text-purple-400">🕵️</span>
+                                <span className="text-[9px] opacity-0 group-hover:opacity-100 text-purple-400 pl-1">[Open]</span>
                               </button>
                             ) : (
                               <span className="text-stone-600 font-sans italic">Unassigned</span>
@@ -619,23 +618,23 @@ export default function SuperAdminPage() {
                               <div className="bg-stone-950 p-2 rounded-lg border border-stone-850">
                                 {isGoogleSheets ? (
                                   <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
-                                    📊 Google Sheets Attached
+                                    [ Google Sheets Attached ]
                                   </span>
                                 ) : isExcel ? (
                                   <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
-                                    📈 Excel Spreadsheet File
+                                    [ Excel Spreadsheet File ]
                                   </span>
                                 ) : isWord ? (
                                   <span className="text-[11px] font-bold text-blue-400 flex items-center gap-1">
-                                    📝 Word Document Attached
+                                    [ Word Document Attached ]
                                   </span>
                                 ) : isImage ? (
                                   <span className="text-[11px] font-bold text-sky-400 flex items-center gap-1">
-                                    🖼️ Image Attachment
+                                    [ Image Attachment ]
                                   </span>
                                 ) : isPdf ? (
                                   <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
-                                    📄 PDF Report Attached
+                                    [ PDF Report Attached ]
                                   </span>
                                 ) : (
                                   <p className="line-clamp-2 text-[11px] text-stone-400">
@@ -655,7 +654,7 @@ export default function SuperAdminPage() {
                                 className="px-2.5 py-1.5 bg-purple-950/40 hover:bg-purple-900/50 text-purple-300 border border-purple-800/50 rounded-lg text-[10px] font-bold"
                                 title="Operate as this staff code"
                               >
-                                🕵️ Covert Portal
+                                Covert Portal
                               </button>
                             )}
                             <button 
@@ -773,12 +772,12 @@ export default function SuperAdminPage() {
             <div className="flex gap-4 text-xs pt-2">
               {selectedStaff.linkedin_url && (
                 <a href={selectedStaff.linkedin_url} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline font-bold">
-                  🔗 LinkedIn Profile
+                  [ LinkedIn Profile ]
                 </a>
               )}
               {selectedStaff.portfolio_url && (
                 <a href={selectedStaff.portfolio_url} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline font-bold">
-                  🌐 Portfolio Website
+                  [ Portfolio Website ]
                 </a>
               )}
             </div>
@@ -803,6 +802,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
   const [pendingPayments, setPendingPayments] = useState([])
   const [interviews, setInterviews] = useState([])
   const [cvsList, setCvsList] = useState([]) // Direct state for `cvs` table records
+  const [selectedCandidate, setSelectedCandidate] = useState(null) // Added for expanded view
 
   // UI Interactive States
   const [activeTab, setActiveTab] = useState('payments')
@@ -1058,7 +1058,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
 
   // Reset recruitment cycle for target staff code
   const handleGlobalReset = async () => {
-    const confirmation = window.confirm(`⚠️ [COVERT ACTION] Purge interviews, payments, and reset candidate profiles for staff code (${staffCode})?`)
+    const confirmation = window.confirm(`[COVERT ACTION] Purge interviews, payments, and reset candidate profiles for staff code (${staffCode})?`)
     if (!confirmation) return
 
     try {
@@ -1102,7 +1102,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[9px] font-black rounded uppercase tracking-widest animate-pulse">
-                🕵️ Covert Operations Portal Active
+                Covert Operations Portal Active
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
@@ -1130,14 +1130,14 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
               onClick={handleGlobalReset}
               className="px-3 py-2 bg-red-950/40 border border-red-900/60 hover:bg-red-900/60 text-red-300 text-xs font-bold rounded-xl transition"
             >
-              🔄 Reset Cycle ({staffCode})
+              Reset Cycle ({staffCode})
             </button>
 
             <button 
               onClick={onCloseCovert}
               className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-300 border border-stone-700 text-xs font-bold rounded-xl transition"
             >
-              ❌ Exit Covert View
+              Exit Covert View
             </button>
           </div>
         </div>
@@ -1253,7 +1253,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                             onClick={() => setSelectedReceiptUrl(p.receipt_url)}
                             className="w-full py-2 bg-stone-900 hover:bg-stone-850 text-amber-500 border border-stone-800 rounded-lg text-xs font-bold"
                           >
-                            👀 View Receipt
+                            View Receipt
                           </button>
                           <div className="grid grid-cols-2 gap-2">
                             <button 
@@ -1304,7 +1304,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                 onClick={() => setSelectedReceiptUrl(p.receipt_url)}
                                 className="px-3 py-1.5 bg-stone-900 hover:bg-stone-850 text-amber-500 border border-stone-850 rounded-lg text-[10px] font-black"
                               >
-                                👀 View Receipt
+                                View Receipt
                               </button>
                             </td>
                             <td className="py-4 text-right space-x-2">
@@ -1376,7 +1376,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                   <div key={cv.id} className="bg-stone-900 p-2 rounded-lg border border-stone-800 flex items-center justify-between">
                                     <div className="truncate pr-2">
                                       <p className="text-[11px] font-bold text-amber-400 truncate">
-                                        📄 {cv.file_name || cv.name || 'CV Document'}
+                                        [DOC] {cv.file_name || cv.name || 'CV Document'}
                                       </p>
                                       <p className="text-[9px] text-stone-500">
                                         {cv.created_at ? new Date(cv.created_at).toLocaleDateString() : ''}
@@ -1388,7 +1388,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                       rel="noreferrer"
                                       className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded text-[10px] font-bold shrink-0"
                                     >
-                                      📥 View CV
+                                      View CV
                                     </a>
                                   </div>
                                 ))}
@@ -1400,7 +1400,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-850 border border-stone-800 text-stone-300 rounded-lg text-xs font-bold"
                               >
-                                📥 Download Legacy CV
+                                Download Legacy CV
                               </a>
                             ) : (
                               <span className="text-stone-600 italic text-[10px] block">No CV on file in database</span>
@@ -1527,7 +1527,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                       <div key={cv.id} className="bg-stone-950 p-2 rounded-lg border border-stone-850 space-y-1">
                                         <div className="flex justify-between items-start gap-1">
                                           <span className="font-bold text-amber-400 text-[10px] truncate block" title={cv.file_name || cv.name}>
-                                            📄 {cv.file_name || cv.name || 'CV Document'}
+                                            [DOC] {cv.file_name || cv.name || 'CV Document'}
                                           </span>
                                           <a 
                                             href={cv.cv_url} 
@@ -1535,7 +1535,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                             rel="noreferrer"
                                             className="px-2 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded text-[9px] font-bold shrink-0"
                                           >
-                                            View ↗
+                                            View
                                           </a>
                                         </div>
                                         {cv.created_at && (
@@ -1553,7 +1553,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                     rel="noreferrer"
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-850 border border-stone-800 text-stone-300 hover:text-white rounded-lg text-[10px] font-bold"
                                   >
-                                    📥 Download Legacy CV
+                                    Download Legacy CV
                                   </a>
                                 ) : (
                                   <span className="text-stone-600 italic text-[10px] block">No CV found in `cvs` table</span>
@@ -1665,7 +1665,11 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                     {/* MOBILE CANDIDATE CARDS */}
                     <div className="block md:hidden space-y-3">
                       {paidCandidates.map((p) => (
-                        <div key={p.id} className="bg-stone-950/60 border border-stone-850 rounded-xl p-4 space-y-2">
+                        <div 
+                          key={p.id} 
+                          onClick={() => setSelectedCandidate(p)}
+                          className="bg-stone-950/60 border border-stone-850 rounded-xl p-4 space-y-2 cursor-pointer hover:bg-stone-900 transition"
+                        >
                           <div className="flex justify-between items-start">
                             <p className="font-bold text-white text-sm">{p.full_name || 'N/A'}</p>
                             <span className="px-2 py-0.5 rounded text-[10px] font-black bg-green-500/10 text-green-400 border border-green-500/20">
@@ -1682,16 +1686,19 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                             <p className="text-[10px] text-stone-500">Relocation: {p.willing_to_relocate ? 'Yes' : (p.willing_to_relocate === false ? 'No' : 'N/A')} • {p.employment_status || 'Status N/A'}</p>
                           </div>
 
-                          <div className="pt-2 flex flex-wrap gap-1 border-t border-stone-900">
-                            {p.primary_skills && p.primary_skills.length > 0 ? (
-                              p.primary_skills.map((skill, idx) => (
-                                <span key={idx} className="bg-purple-900/30 border border-purple-800/50 text-purple-300 px-2 py-0.5 rounded text-[9px]">
-                                  {skill}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-stone-600 italic text-[10px]">No skills listed</span>
-                            )}
+                          <div className="pt-2 border-t border-stone-900 flex justify-between items-center">
+                             <div className="flex flex-wrap gap-1">
+                              {p.primary_skills && p.primary_skills.length > 0 ? (
+                                p.primary_skills.slice(0, 2).map((skill, idx) => (
+                                  <span key={idx} className="bg-purple-900/30 border border-purple-800/50 text-purple-300 px-2 py-0.5 rounded text-[9px]">
+                                    {skill}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-stone-600 italic text-[10px]">No skills listed</span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-amber-500 font-bold">[ View Profile ]</span>
                           </div>
                         </div>
                       ))}
@@ -1706,11 +1713,16 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                             <th className="pb-3">Contact & Location</th>
                             <th className="pb-3">Professional Profile</th>
                             <th className="pb-3">Compensation & Status</th>
+                            <th className="pb-3 text-right">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-900/60 font-medium text-stone-300">
                           {paidCandidates.map((p) => (
-                            <tr key={p.id} className="hover:bg-stone-950/20 align-top">
+                            <tr 
+                              key={p.id} 
+                              onClick={() => setSelectedCandidate(p)}
+                              className="hover:bg-stone-950/40 cursor-pointer align-top transition-colors"
+                            >
                               <td className="py-4">
                                 <div className="font-bold text-white">{p.full_name || 'N/A'}</div>
                                 <div className="flex flex-wrap gap-1 mt-1">
@@ -1729,7 +1741,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                 <div className="text-[10px] text-stone-500">{p.phone_number || 'N/A'}</div>
                                 {(p.location_city || p.location_country) && (
                                   <div className="text-[10px] text-amber-500/70 mt-0.5">
-                                    📍 {p.location_city}, {p.location_country}
+                                    [Loc] {p.location_city}, {p.location_country}
                                   </div>
                                 )}
                               </td>
@@ -1752,16 +1764,21 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                     {p.payment_status || 'unpaid'}
                                   </span>
                                   {p.linkedin_url && (
-                                    <a href={p.linkedin_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline text-[10px]">
-                                      in
+                                    <a href={p.linkedin_url} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline text-[10px]">
+                                      [in]
                                     </a>
                                   )}
                                   {p.portfolio_url && (
-                                    <a href={p.portfolio_url} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline text-[10px]">
-                                      🔗
+                                    <a href={p.portfolio_url} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline text-[10px]">
+                                      [Port]
                                     </a>
                                   )}
                                 </div>
+                              </td>
+                              <td className="py-4 text-right">
+                                <button className="px-3 py-1.5 bg-stone-900 text-amber-500 border border-stone-800 rounded-lg text-[10px] font-black">
+                                  View Profile
+                                </button>
                               </td>
                             </tr>
                           ))}
@@ -1793,6 +1810,120 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
               alt="Payment verification proof" 
               className="max-h-[70vh] object-contain rounded-lg shadow-inner"
             />
+          </div>
+        </div>
+      )}
+
+      {/* EXTENDED VIEW MODAL FOR VERIFIED CANDIDATE */}
+      {selectedCandidate && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="max-w-4xl w-full bg-stone-900 border border-stone-800 rounded-3xl p-6 space-y-6 max-h-[92vh] overflow-y-auto shadow-2xl">
+            
+            <div className="flex justify-between items-start border-b border-stone-850 pb-4">
+              <div>
+                <h2 className="text-xl font-bold text-white">{selectedCandidate.full_name || 'Unnamed Candidate'}</h2>
+                <p className="text-xs text-amber-500 font-mono mt-0.5">
+                  Code: {selectedCandidate.staff_code || 'N/A'} • {selectedCandidate.email} • {selectedCandidate.phone_number || 'No Phone'}
+                </p>
+                <span className="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-black bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider">
+                  Status: {selectedCandidate.payment_status || 'unpaid'}
+                </span>
+              </div>
+              <button 
+                onClick={() => setSelectedCandidate(null)}
+                className="text-stone-400 hover:text-white text-xs font-bold uppercase tracking-wider"
+              >
+                [ Close ]
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 bg-stone-950/50 p-4 rounded-xl border border-stone-850 text-xs">
+              <div>
+                <span className="text-stone-500 block text-[10px] uppercase">Target Role</span>
+                <span className="text-stone-200 font-semibold">{selectedCandidate.target_role || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px] uppercase">Sector</span>
+                <span className="text-stone-200 font-semibold">{selectedCandidate.sector || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px] uppercase">Experience</span>
+                <span className="text-stone-200 font-semibold">
+                  {selectedCandidate.years_of_experience ? `${selectedCandidate.years_of_experience} Yrs` : 'N/A'}
+                </span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px] uppercase">Work Mode</span>
+                <span className="text-stone-200 font-semibold">{selectedCandidate.preferred_work_mode || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px] uppercase">Expected Salary</span>
+                <span className="text-stone-200 font-semibold text-emerald-400">
+                  {selectedCandidate.expected_salary ? `${selectedCandidate.salary_currency || ''} ${selectedCandidate.expected_salary}` : 'N/A'}
+                </span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px] uppercase">Location</span>
+                <span className="text-stone-200 font-semibold">
+                  {selectedCandidate.location_city ? `${selectedCandidate.location_city}, ${selectedCandidate.location_country}` : 'N/A'}
+                </span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px] uppercase">Employment Status</span>
+                <span className="text-stone-200 font-semibold">{selectedCandidate.employment_status || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px] uppercase">Notice Period</span>
+                <span className="text-stone-200 font-semibold">{selectedCandidate.notice_period || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px] uppercase">Relocation</span>
+                <span className="text-stone-200 font-semibold">
+                  {selectedCandidate.willing_to_relocate ? 'Willing' : (selectedCandidate.willing_to_relocate === false ? 'Not Willing' : 'N/A')}
+                </span>
+              </div>
+            </div>
+            
+            {selectedCandidate.primary_skills && selectedCandidate.primary_skills.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-stone-500 block text-[10px] uppercase font-bold tracking-wider">Primary Skills</span>
+                <div className="flex flex-wrap gap-2">
+                  {selectedCandidate.primary_skills.map((skill, idx) => (
+                    <span key={idx} className="bg-purple-900/30 border border-purple-800/50 text-purple-300 px-3 py-1 rounded-lg text-xs">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedCandidate.bio_summary && (
+              <div className="space-y-2">
+                <span className="text-stone-500 block text-[10px] uppercase font-bold tracking-wider">Bio Summary</span>
+                <p className="text-xs text-stone-300 bg-stone-950/40 p-4 rounded-xl border border-stone-850 leading-relaxed">
+                  {selectedCandidate.bio_summary}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-4 text-xs pt-4 border-t border-stone-850">
+              {selectedCandidate.linkedin_url ? (
+                <a href={selectedCandidate.linkedin_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 font-bold transition">
+                  [ LinkedIn Profile ]
+                </a>
+              ) : (
+                <span className="text-stone-600 font-mono">[ No LinkedIn ]</span>
+              )}
+              
+              {selectedCandidate.portfolio_url ? (
+                <a href={selectedCandidate.portfolio_url} target="_blank" rel="noreferrer" className="text-pink-400 hover:text-pink-300 font-bold transition">
+                  [ Portfolio Website ]
+                </a>
+              ) : (
+                <span className="text-stone-600 font-mono">[ No Portfolio ]</span>
+              )}
+            </div>
+
           </div>
         </div>
       )}
