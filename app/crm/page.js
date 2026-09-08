@@ -349,8 +349,11 @@ export default function CrmDashboard() {
                       <span className="text-xs text-stone-400 font-mono">
                         {msg.profiles?.email || msg.email || 'No email provided'}
                       </span>
+                      <span className="text-[10px] text-stone-500 font-mono mt-1 block">
+                        {new Date(msg.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
-                   
+                    
                     <div className="flex flex-col items-end gap-1.5">
                       <span className="text-[10px] font-mono tracking-wider font-bold bg-stone-950 border border-stone-850 px-2 py-0.5 rounded text-stone-300">
                         {msg.ticketId}
@@ -511,6 +514,9 @@ export default function CrmDashboard() {
                           </h3>
                           <p className="text-xs text-stone-400 font-medium">
                             {selectedMessage.profiles?.email || selectedMessage.email}
+                          </p>
+                          <p className="text-[10px] text-stone-500 font-mono mt-1">
+                            Sent: {new Date(selectedMessage.created_at).toLocaleString([], { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
