@@ -702,7 +702,7 @@ export default function SuperAdminPage() {
               {renderReportContent(selectedStaff.staff_report)}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-stone-950/50 p-4 rounded-xl border border-stone-850 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 bg-stone-950/50 p-4 rounded-xl border border-stone-850 text-xs">
               <div>
                 <span className="text-stone-500 block text-[10px]">Target Role</span>
                 <span className="text-stone-200 font-semibold">{selectedStaff.target_role || 'N/A'}</span>
@@ -712,8 +712,20 @@ export default function SuperAdminPage() {
                 <span className="text-stone-200 font-semibold">{selectedStaff.sector || 'N/A'}</span>
               </div>
               <div>
+                <span className="text-stone-500 block text-[10px]">Experience</span>
+                <span className="text-stone-200 font-semibold">
+                  {selectedStaff.years_of_experience ? `${selectedStaff.years_of_experience} Yrs` : 'N/A'}
+                </span>
+              </div>
+              <div>
                 <span className="text-stone-500 block text-[10px]">Work Mode</span>
                 <span className="text-stone-200 font-semibold">{selectedStaff.preferred_work_mode || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px]">Expected Salary</span>
+                <span className="text-stone-200 font-semibold">
+                  {selectedStaff.expected_salary ? `${selectedStaff.salary_currency || ''} ${selectedStaff.expected_salary}` : 'N/A'}
+                </span>
               </div>
               <div>
                 <span className="text-stone-500 block text-[10px]">Location</span>
@@ -722,18 +734,34 @@ export default function SuperAdminPage() {
                 </span>
               </div>
               <div>
-                <span className="text-stone-500 block text-[10px]">Experience</span>
-                <span className="text-stone-200 font-semibold">
-                  {selectedStaff.years_of_experience ? `${selectedStaff.years_of_experience} Yrs` : 'N/A'}
-                </span>
+                <span className="text-stone-500 block text-[10px]">Employment Status</span>
+                <span className="text-stone-200 font-semibold">{selectedStaff.employment_status || 'N/A'}</span>
               </div>
               <div>
-                <span className="text-stone-500 block text-[10px]">Expected Salary</span>
+                <span className="text-stone-500 block text-[10px]">Notice Period</span>
+                <span className="text-stone-200 font-semibold">{selectedStaff.notice_period || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-stone-500 block text-[10px]">Relocation</span>
                 <span className="text-stone-200 font-semibold">
-                  {selectedStaff.expected_salary ? `${selectedStaff.salary_currency || ''} ${selectedStaff.expected_salary}` : 'N/A'}
+                  {selectedStaff.willing_to_relocate ? 'Willing' : (selectedStaff.willing_to_relocate === false ? 'Not Willing' : 'N/A')}
                 </span>
               </div>
             </div>
+            
+            {/* Primary Skills Viewer */}
+            {selectedStaff.primary_skills && selectedStaff.primary_skills.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-stone-500 block text-[10px]">Primary Skills</span>
+                <div className="flex flex-wrap gap-2">
+                  {selectedStaff.primary_skills.map((skill, idx) => (
+                    <span key={idx} className="bg-stone-900 border border-stone-800 text-stone-300 px-2 py-0.5 rounded text-[10px]">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {selectedStaff.bio_summary && (
               <div className="space-y-1">
@@ -831,10 +859,10 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
         setPaidCandidates(verifiedPaidOnly)
       }
 
-      // 3. Fetch interviews filtered by target staff_code
+      // 3. Fetch interviews filtered by target staff_code including ALL new profile fields
       let { data: interviewsData, error: interviewsErr } = await supabase
         .from('interviews')
-        .select(`*, profiles!inner(id, full_name, email, phone_number, payment_status, interests, staff_code)`)
+        .select(`*, profiles!inner(id, full_name, email, phone_number, payment_status, interests, staff_code, sector, target_role, years_of_experience, employment_status, notice_period, preferred_work_mode, expected_salary, salary_currency, location_city, location_country, willing_to_relocate, primary_skills, linkedin_url, portfolio_url, bio_summary)`)
         .ilike('profiles.staff_code', normalizedCode)
         .order('created_at', { ascending: false })
 
@@ -868,7 +896,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
           if (!insertErr) {
             const { data: refreshedInterviews } = await supabase
               .from('interviews')
-              .select(`*, profiles!inner(id, full_name, email, phone_number, payment_status, interests, staff_code)`)
+              .select(`*, profiles!inner(id, full_name, email, phone_number, payment_status, interests, staff_code, sector, target_role, years_of_experience, employment_status, notice_period, preferred_work_mode, expected_salary, salary_currency, location_city, location_country, willing_to_relocate, primary_skills, linkedin_url, portfolio_url, bio_summary)`)
               .ilike('profiles.staff_code', normalizedCode)
               .order('created_at', { ascending: false })
 
@@ -1644,17 +1672,25 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                               {p.payment_status || 'unpaid'}
                             </span>
                           </div>
+                          
                           <p className="text-[11px] text-stone-400">{p.email || 'N/A'}</p>
                           <p className="text-[10px] text-stone-500">{p.phone_number || 'N/A'}</p>
+                          
+                          <div className="py-2 space-y-1">
+                            <p className="text-[11px] text-stone-300 font-bold">{p.target_role || 'Target Role N/A'}</p>
+                            <p className="text-[10px] text-stone-500">{p.sector || 'Sector N/A'} • {p.years_of_experience ? `${p.years_of_experience} Yrs` : 'Exp N/A'}</p>
+                            <p className="text-[10px] text-stone-500">Relocation: {p.willing_to_relocate ? 'Yes' : (p.willing_to_relocate === false ? 'No' : 'N/A')} • {p.employment_status || 'Status N/A'}</p>
+                          </div>
+
                           <div className="pt-2 flex flex-wrap gap-1 border-t border-stone-900">
-                            {p.interests && p.interests.length > 0 ? (
-                              p.interests.map((int, idx) => (
-                                <span key={idx} className="bg-stone-900 border border-stone-800 text-stone-400 px-2 py-0.5 rounded text-[9px]">
-                                  {int}
+                            {p.primary_skills && p.primary_skills.length > 0 ? (
+                              p.primary_skills.map((skill, idx) => (
+                                <span key={idx} className="bg-purple-900/30 border border-purple-800/50 text-purple-300 px-2 py-0.5 rounded text-[9px]">
+                                  {skill}
                                 </span>
                               ))
                             ) : (
-                              <span className="text-stone-600 italic text-[10px]">No interests specified</span>
+                              <span className="text-stone-600 italic text-[10px]">No skills listed</span>
                             )}
                           </div>
                         </div>
@@ -1666,34 +1702,64 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="border-b border-stone-850 text-stone-500 font-bold uppercase tracking-wider">
-                            <th className="pb-3">Full Name</th>
-                            <th className="pb-3">Email</th>
-                            <th className="pb-3">Phone</th>
-                            <th className="pb-3">Payment State</th>
-                            <th className="pb-3">Interests Specified</th>
+                            <th className="pb-3">Candidate Details</th>
+                            <th className="pb-3">Contact & Location</th>
+                            <th className="pb-3">Professional Profile</th>
+                            <th className="pb-3">Compensation & Status</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-900/60 font-medium text-stone-300">
                           {paidCandidates.map((p) => (
-                            <tr key={p.id} className="hover:bg-stone-950/20">
-                              <td className="py-4 font-bold text-white">{p.full_name || 'N/A'}</td>
-                              <td className="py-4 text-stone-400">{p.email || 'N/A'}</td>
-                              <td className="py-4 text-stone-400">{p.phone_number || 'N/A'}</td>
+                            <tr key={p.id} className="hover:bg-stone-950/20 align-top">
                               <td className="py-4">
-                                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-green-500/10 text-green-400 border border-green-500/20">
-                                  {p.payment_status || 'unpaid'}
-                                </span>
+                                <div className="font-bold text-white">{p.full_name || 'N/A'}</div>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {p.primary_skills?.slice(0, 3).map((skill, idx) => (
+                                    <span key={idx} className="bg-purple-900/30 text-purple-300 px-1.5 py-0.5 rounded text-[8px] border border-purple-800/50">
+                                      {skill}
+                                    </span>
+                                  ))}
+                                  {p.primary_skills?.length > 3 && (
+                                    <span className="text-[8px] text-stone-500">+{p.primary_skills.length - 3}</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-4 text-stone-400">
+                                <div>{p.email || 'N/A'}</div>
+                                <div className="text-[10px] text-stone-500">{p.phone_number || 'N/A'}</div>
+                                {(p.location_city || p.location_country) && (
+                                  <div className="text-[10px] text-amber-500/70 mt-0.5">
+                                    📍 {p.location_city}, {p.location_country}
+                                  </div>
+                                )}
                               </td>
                               <td className="py-4">
-                                <div className="flex flex-wrap gap-1">
-                                  {p.interests && p.interests.length > 0 ? (
-                                    p.interests.map((int, idx) => (
-                                      <span key={idx} className="bg-stone-900 border border-stone-800 text-stone-400 px-2 py-0.5 rounded text-[9px]">
-                                        {int}
-                                      </span>
-                                    ))
-                                  ) : (
-                                    <span className="text-stone-600 italic text-[10px]">None</span>
+                                <div className="font-semibold text-stone-200 text-[11px]">{p.target_role || 'Role N/A'}</div>
+                                <div className="text-[10px] text-stone-400 mt-0.5">
+                                  {p.sector || 'Sector N/A'} • {p.years_of_experience ? `${p.years_of_experience} Yrs` : 'Exp N/A'}
+                                </div>
+                                <div className="text-[9px] text-stone-500 mt-0.5 flex gap-2">
+                                  <span>{p.employment_status || 'Status N/A'}</span>
+                                  <span>• Relocate: {p.willing_to_relocate ? 'Yes' : (p.willing_to_relocate === false ? 'No' : 'N/A')}</span>
+                                </div>
+                              </td>
+                              <td className="py-4">
+                                <div className="text-[11px] font-bold text-emerald-400">
+                                  {p.expected_salary ? `${p.salary_currency || ''} ${p.expected_salary}` : 'Salary N/A'}
+                                </div>
+                                <div className="mt-1 flex items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded text-[9px] font-black bg-green-500/10 text-green-400 border border-green-500/20">
+                                    {p.payment_status || 'unpaid'}
+                                  </span>
+                                  {p.linkedin_url && (
+                                    <a href={p.linkedin_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline text-[10px]">
+                                      in
+                                    </a>
+                                  )}
+                                  {p.portfolio_url && (
+                                    <a href={p.portfolio_url} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline text-[10px]">
+                                      🔗
+                                    </a>
                                   )}
                                 </div>
                               </td>
