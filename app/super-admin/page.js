@@ -817,6 +817,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
   const [dateInputs, setDateInputs] = useState({})
   const [notesInputs, setNotesInputs] = useState({})
   const [cvFileInputs, setCvFileInputs] = useState({})
+  const [attachmentInputs, setAttachmentInputs] = useState({}) // ADDED STATE FOR ATTACHMENTS
 
   useEffect(() => {
     fetchDashboardData(staffCode)
@@ -985,9 +986,11 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
       const link = meetingInputs[interviewId] || null
       const notesVal = notesInputs[interviewId] || null
       const selectedCvFile = cvFileInputs[interviewId]
+      const selectedAttachments = attachmentInputs[interviewId] || [] // ADDED
 
       let uploadedCvUrl = null
       let uploadedBucketPath = null
+      let uploadedAttachmentUrls = [] // ADDED
 
       if (selectedCvFile) {
         const fileExt = selectedCvFile.name.split('.').pop()
@@ -1028,6 +1031,23 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
         }
       }
 
+      // ADDED: UPLOAD MULTIPLE ATTACHMENTS
+      if (selectedAttachments.length > 0) {
+        for (const file of selectedAttachments) {
+          const fileExt = file.name.split('.').pop()
+          const filePath = `interview_attachments/${interviewId}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+          
+          const { error: uploadError } = await supabase.storage
+            .from('cvs') // using the same cvs bucket for attachments
+            .upload(filePath, file, { upsert: true })
+
+          if (!uploadError) {
+            const { data: pubUrl } = supabase.storage.from('cvs').getPublicUrl(filePath)
+            uploadedAttachmentUrls.push(pubUrl.publicUrl)
+          }
+        }
+      }
+
       const updateData = {
         company_name: company,
         role_title: role,
@@ -1039,6 +1059,12 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
 
       if (uploadedCvUrl) updateData.cv_url = uploadedCvUrl
 
+      // ADDED: APPEND MULTIPLE ATTACHMENT URLS
+      if (uploadedAttachmentUrls.length > 0) {
+        const existingUrls = interviews.find(i => i.id === interviewId)?.attachments_url || []
+        updateData.attachments_url = [...existingUrls, ...uploadedAttachmentUrls]
+      }
+
       const { error } = await supabase
         .from('interviews')
         .update(updateData)
@@ -1046,7 +1072,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
 
       if (error) throw error
 
-      alert("Interview details and candidate CV updated successfully!")
+      alert("Interview details and candidate files updated successfully!")
       fetchDashboardData(staffCode)
     } catch (err) {
       console.error("Save Interview Error:", err)
@@ -1417,6 +1443,43 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                 className="w-full text-xs text-stone-400 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-stone-800 file:text-stone-200"
                               />
                             </div>
+                            
+                            {/* ADDED: MOBILE MULTIPLE ATTACHMENTS VIEW & UPLOAD */}
+                            {i.attachments_url && i.attachments_url.length > 0 && (
+                              <div className="pt-2">
+                                <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">
+                                  Current Attachments ({i.attachments_url.length}):
+                                </label>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {i.attachments_url.map((url, idx) => (
+                                    <a 
+                                      key={idx} 
+                                      href={url} 
+                                      target="_blank" 
+                                      rel="noreferrer" 
+                                      className="text-[9px] bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-amber-500 hover:bg-stone-850 truncate max-w-[150px]"
+                                    >
+                                      [ File {idx + 1} ]
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="pt-2 mt-2 border-t border-stone-900/50">
+                              <label className="block text-[10px] font-bold text-amber-400 uppercase mb-1">
+                                Upload Multiple Attachments:
+                              </label>
+                              <input 
+                                type="file"
+                                multiple
+                                onChange={(e) => {
+                                  const files = Array.from(e.target.files)
+                                  setAttachmentInputs({...attachmentInputs, [i.id]: files})
+                                }}
+                                className="w-full text-xs text-stone-400 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-stone-800 file:text-stone-200"
+                              />
+                            </div>
                           </div>
 
                           {/* Dynamic Inputs */}
@@ -1467,7 +1530,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                             disabled={savingInterviewId === i.id}
                             className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-lg text-xs font-extrabold transition disabled:bg-stone-800 disabled:text-stone-500"
                           >
-                            {savingInterviewId === i.id ? "Saving Details & Uploading CV..." : "Save Details & CV"}
+                            {savingInterviewId === i.id ? "Saving Details & Uploading CV..." : "Save Details & Files"}
                           </button>
                         </div>
                       )
@@ -1482,7 +1545,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                           <th className="pb-3">Candidate Info</th>
                           <th className="pb-3">Contact</th>
                           <th className="pb-3">Status</th>
-                          <th className="pb-3 max-w-[240px]">Candidate Resumes (from `cvs` table)</th>
+                          <th className="pb-3 max-w-[240px]">Candidate Resumes & Attachments</th>
                           <th className="pb-3">Scheduling Data Inputs</th>
                           <th className="pb-3 text-right">Action</th>
                         </tr>
@@ -1519,7 +1582,7 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                 </span>
                               </td>
 
-                              {/* --- CVS TABLE INTEGRATION --- */}
+                              {/* --- CVS & ATTACHMENTS SECTION --- */}
                               <td className="py-4 space-y-2 max-w-[240px]">
                                 {matchedCvs.length > 0 ? (
                                   <div className="space-y-1.5">
@@ -1567,6 +1630,43 @@ function CovertAdminPortal({ staffCode, allStaffCodes, onSwitchStaffCode, onClos
                                     type="file"
                                     accept=".pdf, .doc, .docx"
                                     onChange={(e) => setCvFileInputs({...cvFileInputs, [i.id]: e.target.files[0]})}
+                                    className="w-full text-[10px] text-stone-400 file:mr-1 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[9px] file:font-bold file:bg-stone-800 file:text-stone-200 cursor-pointer"
+                                  />
+                                </div>
+
+                                {/* ADDED: DESKTOP MULTIPLE ATTACHMENTS VIEW & UPLOAD */}
+                                {i.attachments_url && i.attachments_url.length > 0 && (
+                                  <div className="pt-2 border-t border-stone-800/50 mt-2">
+                                    <label className="block text-[9px] font-bold text-stone-400 uppercase mb-1">
+                                      Current Attachments ({i.attachments_url.length}):
+                                    </label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {i.attachments_url.map((url, idx) => (
+                                        <a 
+                                          key={idx} 
+                                          href={url} 
+                                          target="_blank" 
+                                          rel="noreferrer" 
+                                          className="text-[9px] bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-amber-500 hover:bg-stone-850 truncate max-w-[150px]"
+                                        >
+                                          [ File {idx + 1} ]
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div className="pt-1 mt-2 border-t border-stone-800/50">
+                                  <label className="block text-[9px] font-bold text-amber-400 uppercase mb-1">
+                                    Upload Multiple Attachments:
+                                  </label>
+                                  <input 
+                                    type="file"
+                                    multiple
+                                    onChange={(e) => {
+                                      const files = Array.from(e.target.files)
+                                      setAttachmentInputs({...attachmentInputs, [i.id]: files})
+                                    }}
                                     className="w-full text-[10px] text-stone-400 file:mr-1 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[9px] file:font-bold file:bg-stone-800 file:text-stone-200 cursor-pointer"
                                   />
                                 </div>

@@ -40,6 +40,9 @@ export default function DashboardPage() {
   // --- ENLARGED NOTES POPUP STATE ---
   const [selectedNotesModal, setSelectedNotesModal] = useState(null)
 
+  // --- ATTACHMENT VIEWER STATE ---
+  const [selectedAttachmentUrl, setSelectedAttachmentUrl] = useState(null)
+
   // --- POPUP & EDIT DETAILS FORM STATE ---
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   const [savingDetails, setSavingDetails] = useState(false)
@@ -365,6 +368,74 @@ export default function DashboardPage() {
     await supabase.auth.signOut()
     router.push('/login')
   }
+
+  // --- HELPER TO RENDER UNIVERSAL VIEWER FOR ATTACHMENTS ---
+  const renderAttachmentViewer = () => {
+    if (!selectedAttachmentUrl) return null;
+
+    const lowerUrl = selectedAttachmentUrl.toLowerCase();
+    const isImage = /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/.test(lowerUrl);
+    const isPdf = lowerUrl.includes('.pdf');
+    const isOffice = /\.(doc|docx|xls|xlsx|ppt|pptx)(\?.*)?$/.test(lowerUrl);
+
+    let viewerSrc = selectedAttachmentUrl;
+    if (isOffice) {
+      viewerSrc = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(selectedAttachmentUrl)}`;
+    } else if (!isImage && !isPdf) {
+      // Fallback for other document types using Google Docs Viewer
+      viewerSrc = `https://docs.google.com/gview?url=${encodeURIComponent(selectedAttachmentUrl)}&embedded=true`;
+    }
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="bg-stone-900 border border-stone-800 w-full max-w-5xl h-[85vh] rounded-3xl p-4 sm:p-6 shadow-2xl relative flex flex-col">
+          <div className="flex justify-between items-center pb-4 border-b border-stone-850 mb-4 shrink-0">
+            <div className="flex items-center gap-3">
+              <span className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+              </span>
+              <div>
+                <h3 className="text-white font-bold text-sm">Attachment Viewer</h3>
+                <a href={selectedAttachmentUrl} target="_blank" rel="noreferrer" className="text-[10px] text-amber-400 hover:underline truncate block max-w-xs sm:max-w-md">
+                  {selectedAttachmentUrl}
+                </a>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <a 
+                href={selectedAttachmentUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-stone-950 hover:bg-stone-800 text-stone-300 border border-stone-800 rounded-xl text-xs font-bold transition"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download File
+              </a>
+              <button 
+                onClick={() => setSelectedAttachmentUrl(null)}
+                className="p-2 bg-stone-950 hover:bg-stone-800 border border-stone-800 text-stone-400 hover:text-white rounded-xl transition"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex-grow w-full bg-stone-950 rounded-2xl overflow-hidden flex items-center justify-center border border-stone-850">
+            {isImage ? (
+              <img src={selectedAttachmentUrl} alt="Attachment" className="max-w-full max-h-full object-contain p-4" />
+            ) : (
+              <iframe src={viewerSrc} className="w-full h-full border-0 bg-white" title="Document Viewer" />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // --- REUSABLE NAVIGATION BUTTONS COMPONENT ---
   const NavMenuButtons = () => (
@@ -841,6 +912,49 @@ export default function DashboardPage() {
                                 </div>
                               </div>
                             </div>
+
+                            {/* --- MULTIPLE FILE ATTACHMENTS SECTION --- */}
+                            {interview.attachments_url && interview.attachments_url.length > 0 && (
+                              <div className="pt-4 border-t border-stone-850 mt-2">
+                                <h4 className="text-[10px] uppercase tracking-wider text-stone-400 font-extrabold flex items-center gap-1.5 mb-3">
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                  </svg>
+                                  Files & Attachments ({interview.attachments_url.length})
+                                </h4>
+                                <div className="flex flex-wrap gap-3">
+                                  {interview.attachments_url.map((url, idx) => {
+                                    const fileName = url.split('/').pop().split('?')[0] || `Attachment ${idx + 1}`;
+                                    return (
+                                      <div key={idx} className="flex items-center gap-2 bg-stone-950/60 border border-stone-800 py-1.5 pl-3 pr-1.5 rounded-xl group hover:border-amber-500/40 transition max-w-full sm:max-w-xs">
+                                        <button 
+                                          onClick={() => setSelectedAttachmentUrl(url)}
+                                          className="flex items-center gap-2 text-xs text-stone-300 hover:text-amber-400 font-medium truncate flex-grow text-left"
+                                        >
+                                          <svg className="w-4 h-4 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                          </svg>
+                                          <span className="truncate">{decodeURIComponent(fileName)}</span>
+                                        </button>
+                                        <a 
+                                          href={url} 
+                                          target="_blank" 
+                                          rel="noreferrer" 
+                                          download
+                                          className="p-1.5 text-stone-500 hover:text-white bg-stone-900 rounded-lg hover:bg-stone-800 transition shrink-0 border border-stone-800" 
+                                          title="Download Attachment"
+                                        >
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                          </svg>
+                                        </a>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
                           </div>
                         );
                       })}
@@ -1097,6 +1211,9 @@ export default function DashboardPage() {
         </section>
 
       </main>
+
+      {/* --- ATTACHMENT VIEWER OVERLAY --- */}
+      {renderAttachmentViewer()}
 
       {/* --- ENLARGED HIGHLY AESTHETIC NOTES POPUP MODAL --- */}
       {selectedNotesModal && (
